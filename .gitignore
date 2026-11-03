@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Testing / linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ML artifacts (large, regenerable)
+checkpoints/
+outputs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.npy
+*.npz
+*.h5
+
+# MLflow
+mlruns/
+mlartifacts/
+mlflow.db
+
+# Data (large; read from shared ml-data root, not committed)
+data/
+!data/splits/
+
+# Env / IDE
+.env
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
