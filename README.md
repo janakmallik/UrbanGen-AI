@@ -29,6 +29,8 @@ It is a **separate project** from [UrbanMind-AI](https://github.com/janakmallik/
 | **D** | Real + DDPM synthetic residential | Diffusion arm |
 | **E** | Real + DCGAN synthetic residential | GAN arm |
 
+All five arms train fresh ResNet-50 models under the same protocol. The Week 5 ResNet-50 checkpoint is preserved as a historical reference (its 0.6984 macro-F1 motivates the residential focus) but is not used as Arm A.
+
 **Pre-stated success criterion (frozen — not movable after results are seen):** a generative arm "works" if residential recall improves by ≥ +0.03 with a 95% bootstrap CI excluding zero, **and** macro-F1 does not degrade by more than −0.01. Evaluated on the real clean BDD100K test split (4,745 images).
 
 **A negative result is a valid outcome.** If no generative arm beats arm A, the finding is: *"class-conditional generative models at this scale do not produce downstream-useful synthetic data for this task."* That is a real, documented research result — the same discipline UrbanMind-AI applied to its fusion negative results.
@@ -70,9 +72,9 @@ Results will be populated as each milestone ships. The table is deliberately hon
 
 | Model | Dataset | Status | FID | Sample quality | Model card |
 |---|---|---|---|---|---|
-| **cVAE** (conditional, 64×64) | BDD100K train | [G1 — not yet run] | — | — | — |
+| **cVAE** (conditional, resolution TBD after profiling) | BDD100K train | [G1 — not yet run] | — | — | — |
 | **Conditional DDPM** (latent space) | BDD100K train + cVAE latents | [G2 — not yet run] | — | — | — |
-| **Conditional DCGAN** (64×64) | BDD100K train | [G3 — not yet run] | — | — | — |
+| **Conditional DCGAN** (resolution TBD after profiling) | BDD100K train | [G3 — not yet run] | — | — | — |
 
 ---
 
@@ -99,10 +101,10 @@ UrbanGen-AI consumes the following published artifacts from UrbanMind-AI at comm
 | `bdd100k_labels_images_train.json` | `c1998792…` | Source of the 68,969 training images |
 | `bdd100k_labels_images_val.json` | `c835be65…` | Source of val/test partition |
 | `resnet_val_clean.json` (4,727 entries) | `9ee1b6c6…` | Validation split |
-| `resnet_test_clean.json` (4,745 entries) | `ca47e16a…` | **Final test split** — never used for training or model selection |
+| `resnet_test_clean.json` (4,745 entries) | `ca47e16a…` | **Final test split** — held out from all UrbanGen model development and model selection. Previously used in UrbanMind-AI's Week 5 and Week 9a work for those projects' own baselines; disclosed for transparency. |
 | `resnet_val_excluded.json` (205) | `05d54fda…` | Contamination record |
 | `resnet_test_excluded.json` (187) | `ec48bc01…` | Contamination record |
-| `bdd_resnet50_best.pt` | `f760b94c…` | Week 5 ResNet-50 baseline (arm A) |
+| `bdd_resnet50_best.pt` | `f760b94c…` | Week 5 ResNet-50 baseline — historical reference checkpoint, not part of the five-arm protocol |
 
 Full hashes, split semantics, and the documented class-distribution discrepancy vs UrbanMind-AI's Week 5 card are in [`docs/dataset_cards/bdd100k_generative.md`](docs/dataset_cards/bdd100k_generative.md).
 

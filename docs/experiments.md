@@ -166,4 +166,28 @@ These are adopted only if the pilot shows a signal — defined as arm B beating 
 - `scripts/run_pilot_arms.py` — 5-arm comparison on validation
 - Go/no-go decision recorded
 
+### Profiling evidence (scripts/profile_gpu_cvae.py)
+
+Before locking 128×128 batch 32, a cVAE-shaped profiler measured FP32
+training-step time and peak VRAM across five configurations. The
+profiling model is a complete encoder→latent→decoder path with the same
+channel widths as the planned cVAE — not an encoder-only placeholder.
+
+| Resolution | Batch | Peak VRAM (FP32) | ms/step | Compute-only epoch |
+|---|---|---|---|---|
+| 64×64 | 32 | 0.09 GB | 12.2 | 0.4 min |
+| 64×64 | 64 | 0.13 GB | 8.5 | 0.2 min |
+| 64×64 | 128 | 0.20 GB | 14.3 | 0.1 min |
+| 128×128 | 16 | 0.20 GB | 13.6 | 1.0 min |
+| 128×128 | 32 | 0.27 GB | 16.6 | 0.6 min |
+
+Every configuration fits easily inside 6 GB VRAM. 128×128 was chosen for
+image fidelity, not memory constraints: the downstream ResNet-50 receives
+224×224 inputs, and 128×128 retains more scene detail than 64×64 after
+upscale. Batch 32 leaves ~5.7 GB of VRAM headroom.
+
+The "compute-only epoch" column excludes DataLoader overhead (image
+decode, augmentation, CPU→GPU transfer). Real epoch time will be
+measured during the G1b training run and reported in the G1b entry.
+
 ---
