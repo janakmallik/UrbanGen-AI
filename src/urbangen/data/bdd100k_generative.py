@@ -21,6 +21,17 @@ from torch.utils.data import Dataset
 from urbangen.config import data_root  # noqa: F401  (unused here but keeps import symmetry)
 
 
+def _resolve_cache_path(cache_root: Path, stored: str) -> Path:
+    """Resolve a manifest-stored path across platforms.
+
+    The manifest may store Windows-style paths (backslashes) or POSIX-style
+    paths (forward slashes), depending on where it was committed. Normalize
+    to forward slashes, take the basename, join to cache_root.
+    """
+    name = stored.replace("\\", "/").split("/")[-1]
+    return cache_root / name
+
+
 class BDD100K128Dataset(Dataset):
     """One (image, label) per item. Image: float32 (3, 128, 128) in [0, 1]."""
 
@@ -48,8 +59,8 @@ class BDD100K128Dataset(Dataset):
         self.manifest = manifest
         info = manifest["splits"][split]
 
-        self.images_path = self.cache_root / Path(info["images_path"]).name
-        self.labels_path = self.cache_root / Path(info["labels_path"]).name
+        self.images_path = _resolve_cache_path(self.cache_root, info["images_path"])
+        self.labels_path = _resolve_cache_path(self.cache_root, info["labels_path"])
 
         # Verify cache files exist and match their recorded SHA
         self._verify(self.images_path, info["images_sha256"], "images")

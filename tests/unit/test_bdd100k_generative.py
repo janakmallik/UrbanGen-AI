@@ -115,6 +115,43 @@ def test_bad_dtype_raises(tmp_path):
         BDD100K128Dataset(tmp_path / "cache", "train")
 
 
+def test_windows_style_manifest_path(tmp_path):
+    """The committed manifest was written on Windows (backslashes). The
+    loader must resolve it correctly on any platform."""
+    import json
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    # Simulate a Windows-style manifest path
+    n = 3
+    labels = np.array([0, 1, 2], dtype=np.int64)
+    images = np.zeros((n, 128, 128, 3), dtype=np.uint8)
+    np.save(cache / "train_images.npy", images)
+    np.save(cache / "train_labels.npy", labels)
+    manifest = {
+        "class_names": ["city street", "highway", "residential"],
+        "splits": {
+            "train": {
+                "images_path": r"data\bdd100k_128\train_images.npy",  # Windows style
+                "labels_path": r"data\bdd100k_128\train_labels.npy",
+                "n": n,
+                "images_sha256": hashlib.sha256(
+                    (cache / "train_images.npy").read_bytes()
+                ).hexdigest(),
+                "labels_sha256": hashlib.sha256(
+                    (cache / "train_labels.npy").read_bytes()
+                ).hexdigest(),
+                "class_counts": {"city street": 1, "highway": 1, "residential": 1},
+                "read_only_downstream": False,
+            }
+        },
+    }
+    (cache / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    ds = BDD100K128Dataset(cache, "train")
+    assert len(ds) == 3
+
+
 # ---------------- Integration tests (skip if real cache missing) ----------------
 
 _skip_if_no_cache = pytest.mark.skipif(
