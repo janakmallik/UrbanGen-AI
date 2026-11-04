@@ -154,9 +154,25 @@ def test_windows_style_manifest_path(tmp_path):
 
 # ---------------- Integration tests (skip if real cache missing) ----------------
 
+# The manifest is committed (provenance record), but the .npy caches
+# (~3.59 GiB) are gitignored. On CI the manifest exists but the .npy
+# files do not, so the skipif must test for every cache file the loader
+# actually opens — images and labels, not just the manifest.
+_REQUIRED_CACHE_FILES = (
+    "manifest.json",
+    "train_images.npy",
+    "train_labels.npy",
+    "val_images.npy",
+    "val_labels.npy",
+    "test_images.npy",
+    "test_labels.npy",
+)
+
+_cache_available = all((_CACHE_ROOT / name).is_file() for name in _REQUIRED_CACHE_FILES)
+
 _skip_if_no_cache = pytest.mark.skipif(
-    not (_CACHE_ROOT / "manifest.json").exists(),
-    reason="Real BDD100K 128x128 cache not present; run scripts/precompute_bdd100k_128.py",
+    not _cache_available,
+    reason=("Real BDD100K 128x128 cache files not present; run scripts/precompute_bdd100k_128.py"),
 )
 
 
