@@ -6,6 +6,9 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 
+# extras
+CheakPoint.md
+
 # Testing / linting
 .pytest_cache/
 .ruff_cache/
@@ -29,7 +32,7 @@ mlartifacts/
 mlflow.db
 
 # Data (large; read from shared ml-data root, not committed)
-data/
+/data/
 !data/splits/
 
 # Env / IDE
