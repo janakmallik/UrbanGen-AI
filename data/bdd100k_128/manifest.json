@@ -1,0 +1,69 @@
+{
+  "policy": {
+    "target_size": 128,
+    "aspect_ratio_preserving": true,
+    "original_aspect": "16:9 (1280x720)",
+    "resize_step": "Resize to (128, 72) then center-pad to (128, 128) with black",
+    "resample_filter": "PIL.Image.BILINEAR"
+  },
+  "class_names": [
+    "city street",
+    "highway",
+    "residential"
+  ],
+  "source": {
+    "urbanmind_commit": "dfcfaf7",
+    "urbanmind_tag": "v0.10.0-week10-calibration",
+    "label_json_sha256": {
+      "train": "c1998792e385fd79213187576ca07d5249563d0ab83ae976688ad60668baca9e",
+      "val": "c835be652f0c002897be51e74deedd16a1dcee0b7230f19c0456fba772f694af"
+    },
+    "split_manifest_sha256": {
+      "resnet_val_clean.json": "9ee1b6c69f4e58e83edb704fbd8d42b3972a9b0410aa838a939143205f924682",
+      "resnet_val_excluded.json": "05d54fda00e07083d73f2114607636a6c4056802b5bfd5f5614de2c79d0c4760",
+      "resnet_test_clean.json": "ca47e16a4c6148520b2a0cc3de74b78db20392507c93ea4d5a4039c695d03979",
+      "resnet_test_excluded.json": "ec48bc0166145448e726bb277a7e62084deb727a457424f38f4184e1a6d9daea"
+    }
+  },
+  "splits": {
+    "train": {
+      "images_path": "data\\bdd100k_128\\train_images.npy",
+      "labels_path": "data\\bdd100k_128\\train_labels.npy",
+      "n": 68969,
+      "images_sha256": "6c1d1a2d01a4e150e953f818dba612fa7091b9fe214518b837c689bd821137a9",
+      "labels_sha256": "78c0b809cb3678e8aa3a5e125aba36ac25506393be19f2db4dbb304ee5fe28a0",
+      "class_counts": {
+        "city street": 43516,
+        "highway": 17379,
+        "residential": 8074
+      },
+      "read_only_downstream": false
+    },
+    "val": {
+      "images_path": "data\\bdd100k_128\\val_images.npy",
+      "labels_path": "data\\bdd100k_128\\val_labels.npy",
+      "n": 4727,
+      "images_sha256": "fbf25d90a5ca215c83ccd6158c7334e7dad12481d92b79b83047d87e78806a13",
+      "labels_sha256": "31ab4683be99e7f685ca1778aa3dd4829712a904a7117abb4db4cf45d57ee93f",
+      "class_counts": {
+        "city street": 2951,
+        "highway": 1189,
+        "residential": 587
+      },
+      "read_only_downstream": false
+    },
+    "test": {
+      "images_path": "data\\bdd100k_128\\test_images.npy",
+      "labels_path": "data\\bdd100k_128\\test_labels.npy",
+      "n": 4745,
+      "images_sha256": "5f691bf86b0af98194b0780a6d8fe40a2d74e9fd412337703fb6f4fe4fd975a6",
+      "labels_sha256": "c1f2fe01bbcf968dfb8260c04775407346b7cf906d32a1a43cf037bb417420bb",
+      "class_counts": {
+        "city street": 2945,
+        "highway": 1209,
+        "residential": 591
+      },
+      "read_only_downstream": true
+    }
+  }
+}
