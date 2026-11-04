@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use these models, samples, or results, please cite this repository by its release tag."
+title: "UrbanGen-AI: Class-Conditional Generative Models for Urban Scene Augmentation"
+authors:
+  - family-names: "Mallik"
+    given-names: "Janak"
+repository-code: "https://github.com/janakmallik/UrbanGen-AI"
+license: MIT
+type: software
+
+references:
+  - type: conference-paper
+    title: "BDD100K: A Diverse Driving Dataset for Heterogeneous Multitask Learning"
+    authors:
+      - family-names: "Yu"
+        given-names: "Fisher"
+      - family-names: "Chen"
+        given-names: "Haofeng"
+      - family-names: "Wang"
+        given-names: "Xin"
+      - family-names: "Xian"
+        given-names: "Wenqi"
+      - family-names: "Chen"
+        given-names: "Yingying"
+      - family-names: "Liu"
+        given-names: "Fangchen"
+      - family-names: "Madhavan"
+        given-names: "Vashisht"
+      - family-names: "Darrell"
+        given-names: "Trevor"
+    conference:
+      name: "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)"
+    year: 2020
+
+  - type: software
+    title: "UrbanMind-AI: Multimodal Urban Scene Understanding"
+    authors:
+      - family-names: "Mallik"
+        given-names: "Janak"
+    repository-code: "https://github.com/janakmallik/UrbanMind-AI"
+    version: "v0.10.0-week10-calibration"
+    notes: "Source of the frozen BDD100K splits and Week 5 ResNet-50 baseline consumed by this project."

@@ -39,13 +39,13 @@ It is a **separate project** from [UrbanMind-AI](https://github.com/janakmallik/
 
 | Milestone | Deliverable | Status |
 |---|---|---|
-| **G0** | Project setup, data provenance audit, scoping decision | ✅ `925c44f` (CI green) |
-| **G1** | Conditional VAE training + sample quality | Not yet run |
-| **G2** | Conditional DDPM in latent space + sample quality | Not yet run |
-| **G3** | Conditional DCGAN + mode-collapse analysis | Not yet run |
-| **G4** | Shared generative evaluation framework (FID/KID, memorization, class fidelity) | Not yet run |
-| **G5** | Five-arm downstream ResNet-50 experiment + bootstrap CIs | Not yet run |
-| **G6** | Comparative report + `v0.1.0-urbangen` release tag | Not yet run |
+| **G0** | Project setup, data provenance audit, scoping decision | ✅ Complete (CI green) |
+| **G1** | Conditional VAE training + sample quality | Next |
+| **G2** | Conditional DDPM in latent space + sample quality | Not started |
+| **G3** | Conditional DCGAN + mode-collapse analysis | Not started |
+| **G4** | Shared generative evaluation framework (FID/KID, memorization, class fidelity) | Not started |
+| **G5** | Five-arm downstream ResNet-50 experiment + bootstrap CIs | Not started |
+| **G6** | Comparative report + `v0.1.0-urbangen` release tag | Not started |
 
 ---
 
@@ -207,4 +207,46 @@ MIT — see [LICENSE](LICENSE).
 
 ## Citation
 
-If you reference this project, cite the BDD100K dataset (Yu et al., CVPR 2020) — see the citation block in [`docs/dataset_cards/bdd100k_generative.md`](docs/dataset_cards/bdd100k_generative.md). The generative models themselves are project work, not published research.
+### The dataset
+
+BDD100K is the source dataset and should be cited directly:
+
+```bibtex
+@inproceedings{yu2020bdd100k,
+  title={BDD100K: A Diverse Driving Dataset for Heterogeneous Multitask Learning},
+  author={Yu, Fisher and Chen, Haofeng and Wang, Xin and Xian, Wenqi and Chen, Yingying and Liu, Fangchen and Madhavan, Vashisht and Darrell, Trevor},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year={2020}
+}
+```
+
+### This project
+
+UrbanGen-AI is not a peer-reviewed publication and does not make priority claims. If you use these models, samples, or results, please reference the project by its **release tag**, which pins a specific, reproducible state:
+
+```bibtex
+@software{urbangen_2026,
+  title   = {UrbanGen-AI: Class-Conditional Generative Models for Urban Scene Augmentation},
+  author  = {Mallik, Janak},
+  year    = {2026},
+  url     = {https://github.com/janakmallik/UrbanGen-AI},
+  note    = {Release <tag>, commit <sha>. Consumes BDD100K splits from
+             UrbanMind-AI v0.10.0-week10-calibration}
+}
+```
+
+The `<tag>` and `<sha>` placeholders fill in at G6 when `v0.1.0-urbangen` ships. Until then, cite by repository URL + current `main` branch.
+
+**For exact artifact provenance:**
+- Checkpoint SHA-256s are in each model card.
+- Split manifest SHA-256s are in `docs/dataset_cards/bdd100k_generative.md`.
+- Full provenance chain is recorded in `docs/experiments.md`.
+- A `CITATION.cff` file at repo root provides the "Cite this repository" button on GitHub.
+
+### What this project does NOT claim
+
+- **Not a peer-reviewed result.** No methods novelty claim beyond the integration and evaluation approach.
+- **Not a priority claim.** If you independently train a cVAE on BDD100K, that's fine — this project isn't claiming to have done it first.
+- **Not a result about urban perception in general.** All claims are scoped to BDD100K scene classification under the five-arm protocol in `docs/experiments.md`.
+
+**If you want to formally cite it in an academic paper, the right reference is the repository tag, not a formal BibTeX entry.** Reviewers understand "GitHub repository, tag vX.Y.Z" as a legitimate reference for software artifacts — the [Software Heritage](https://www.softwareheritage.org/) archive and Zenodo DOI-on-release patterns exist for exactly this. Adding a `CITATION.cff` file (see below) makes it automatic.
