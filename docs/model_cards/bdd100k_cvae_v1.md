@@ -84,3 +84,16 @@ Standard VAE architecture (Kingma & Welling, 2013), standard practice for both r
 |---|---|
 | 2026-11-05 | Initial model card. 30-epoch training, β=1, seed 42. Samples documented with memorization, diversity, and classifier limitations. |
 
+
+## Later finding (G1c) — the cVAE's samples are not class-faithful
+
+Follow-up diagnostics (`scripts/diagnose_g1c.py`, `scripts/probe_pilot_features.py`) established that the cVAE's synthetic residential samples are not residential in a real-trained classifier's judgment:
+
+- **Real-only logistic regression classifier predicts 0.6% of 3,000 synthetic residential samples as residential** (90% as highway, 9.4% as city street).
+- **Feature-space centroid cosine:** highway 0.2282, residential 0.2281, city 0.2195. Synthetics are equidistant from highway and residential.
+- **Nearest real neighbor cosine:** 0.443 to residential, 0.501 to non-residential. Synthetics are closer to non-residential.
+- **Visual inspection of `outputs/g1c_diagnostic/nn_grid.png`:** every synthetic is a blurred brown-gray gradient; its nearest real neighbors are sharp road scenes.
+
+**Diagnosis:** representation mismatch. The cVAE at 128×128 with 128-dim latent and MSE reconstruction produces samples that do not occupy the residential feature region. This is not a training failure — the model trained correctly and produces diverse, non-memorized samples. It is a limit of the architecture and loss function at this scale.
+
+See `docs/experiments.md` G1c entry for full diagnostic evidence.

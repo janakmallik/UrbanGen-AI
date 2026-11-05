@@ -522,4 +522,85 @@ The synthetics are equidistant from highway and residential centroids, and farth
 - `outputs/g1c_probe/probe_results.json`, `outputs/g1c_probe/audit_results.json`
 - `outputs/g1c_diagnostic/diagnostic.json`, `outputs/g1c_diagnostic/nn_grid.png`
 
+
+---
+
+## 2026-11-06 — Step 0: residential label audit and Week 5 robustness report
+
+Two diagnostic artifacts produced before any new generative or augmentation work. Neither trains a new model; both use existing infrastructure (Week 5 ResNet-50, frozen ResNet-50 features, the 128×128 cache, BDD100K label JSONs).
+
+### Step 0a — residential label audit
+
+`scripts/audit_residential_labels.py`. Frozen ImageNet ResNet-50 features (2048-d), 5-fold OOF logistic regression (class_weight="balanced").
+
+**OOF per-class recall:**
+
+| Class | Recall | n |
+|---|---|---|
+| City street | 0.6399 | 43,516 |
+| Highway | 0.7579 | 17,379 |
+| **Residential** | **0.7026** | 8,074 |
+
+**Confusion matrix (rows=true, cols=pred):**
+
+|  | pred city | pred hwy | pred res |
+|---|---:|---:|---:|
+| true city | 27,848 | 7,452 | 8,216 |
+| true hwy | 2,694 | 13,171 | 1,514 |
+| true res | 1,631 | 770 | 5,673 |
+
+**Suspect rate** (model confidently disagrees with label): city 36.0%, highway 24.2%, residential 29.7%.
+
+**Grids:** `outputs/label_audit/suspect_residential.png` (24 images the model is confident are NOT residential but are labeled residential) and `confident_residential.png` (24 images the model is confident ARE residential).
+
+**Interpretation:** The residential label carries real signal (OOF recall 0.70) but ~30% of "residential" images are boundary-ambiguous with city street. The class is fuzzy at the BDD100K definition, not mislabeled. Not a label-cleaning problem.
+
+### Step 0b — robustness report card
+
+`scripts/robustness_report.py`. Week 5 ResNet-50 evaluated on 4,745 clean test images, broken down by BDD100K `weather` and `timeofday` attributes. Bootstrap 95% CIs on all metrics.
+
+**Overall:** macro-F1 0.571 [0.553, 0.587]. City recall 0.955 [0.947, 0.962], highway 0.559 [0.532, 0.588], residential 0.124 [0.097, 0.149].
+
+**By weather:**
+
+| Weather | n | macro-F1 [95% CI] |
+|---|---|---|
+| clear | 2,627 | 0.577 [0.552, 0.601] |
+| overcast | 582 | 0.614 [0.562, 0.661] |
+| partly cloudy | 350 | 0.610 [0.548, 0.669] |
+| **rainy** | **326** | **0.481 [0.406, 0.550]** |
+| **snowy** | **366** | **0.526 [0.466, 0.583]** |
+| undefined | 487 | 0.476 [0.415, 0.536] |
+| foggy | 7 | 0.413 [0.111, 0.861] |
+
+**By time of day:**
+
+| Time | n | macro-F1 [95% CI] |
+|---|---|---|
+| dawn/dusk | 367 | 0.612 [0.547, 0.675] |
+| daytime | 2,447 | 0.574 [0.551, 0.596] |
+| **night** | **1,931** | **0.561 [0.526, 0.595]** |
+
+**Cross-tab insights:** rainy has 69% city vs clear's 61%; night has 8% residential vs daytime's 16%. Both weather/subgroup class distributions differ from the overall. The rainy gap is therefore partly real (against the distribution); the night gap is negligible (against the distribution).
+
+### What these artifacts establish
+
+1. **The residential weakness dominates.** Residential recall is 0.124. No weather or time subgroup shows a comparable gap. Adversarial weather affects macro-F1 by ~0.10; the residential class affects it by ~0.30.
+2. **Rainy weather is a real but secondary gap.** ~0.10 macro-F1 drop that is not fully explained by scene-class distribution. But rainy is only 326 of 4,745 test images (7%).
+3. **Night is not a weakness.** ~0.01 macro-F1 drop, overlapping CIs, and the class distribution (fewer residential) actually favors night.
+4. **The residential class is fuzzy.** OOF recall 0.70, but 30% boundary-ambiguous. Not a label-cleaning problem.
+
+### Artifacts (durable, reusable)
+
+- `docs/robustness_report.md` — human-readable subgroup report
+- `outputs/robustness_report/report.json` — machine-readable
+- `outputs/label_audit/` — OOF probs, features, suspect/confident grids, per-image analysis
+- `scripts/audit_residential_labels.py`, `scripts/robustness_report.py`
+
+### Decision
+
+No new model trained. No generative experiment run. The diagnostics establish what's actually wrong with the Week 5 model and provide a reusable toolkit for evaluating future generative pipelines.
+
+**The dominant finding — residential class boundary is fuzzy — is not addressable by generative augmentation.** Any future direction that assumes "more residential training data would help" should account for this: the label itself is partly city-street-like, so the task is ambiguous at the class definition level.
+
 ---

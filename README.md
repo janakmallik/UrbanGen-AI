@@ -1,8 +1,8 @@
 # UrbanGen-AI
 
-**Class-conditional generative models trained from scratch on urban scenes, evaluated by whether their synthetic data measurably improves downstream recognition.**
+**Diagnosing whether from-scratch generative models produce useful synthetic urban data.**
 
-UrbanGen-AI trains three generative architectures (cVAE, conditional DDPM in latent space, conditional DCGAN) on BDD100K scene images, then tests whether the residential-scene images they synthesize improve residential recall on the real BDD100K test set — compared to real-data-only training and to conventional augmentation.
+UrbanGen-AI trained a conditional VAE on BDD100K scene images and asked whether its synthetic residential samples improve downstream recognition. It does not: the cVAE's samples are 0.6% residential in a real-trained classifier's judgment, despite being diverse, non-memorized, and blurry. This project documents that negative result alongside the reusable diagnostic toolkit that produced it.
 
 It is a **separate project** from [UrbanMind-AI](https://github.com/janakmallik/UrbanMind-AI). UrbanMind-AI is the multimodal understanding platform; UrbanGen-AI is the generative-synthetic-data research project. UrbanGen-AI consumes UrbanMind-AI's published data splits and Week 5 ResNet-50 baseline as frozen provenance, and never modifies UrbanMind-AI.
 
@@ -15,102 +15,84 @@ It is a **separate project** from [UrbanMind-AI](https://github.com/janakmallik/
 
 ## The research question
 
-> **Do class-conditional generative models trained from scratch produce synthetic residential-scene images that measurably improve residential recall on the real BDD100K test set — and does any generative family beat conventional augmentation?**
+> **Do class-conditional generative models trained from scratch on BDD100K produce synthetic residential images that measurably improve residential recall on the real BDD100K test set — and does any generative family beat conventional augmentation?**
 
-**Why residential?** UrbanMind-AI's Week 5 ResNet-50 (macro-F1 0.6984) identified residential as the weakest class. Residential is only 11.71% of BDD100K train. If generative augmentation can help any class, it should be this one.
+The pilot was designed with four arms (real-only, real+synthetic, real+conventional-augmentation, real+class-weighted) and a pre-registered success criterion. The pilot was not run to completion because two intermediate diagnostics showed the synthetic samples were not residential-like.
 
-**The five downstream arms** (each trains a fresh ResNet-50 on the same real train split, differing only in what synthetic data is added):
+## What actually shipped
 
-| Arm | Training data | Purpose |
+| Milestone | Tag | Status | Finding |
+|---|---|---|---|
+| **G0** | — | Shipped | Data provenance audit, 3.59 GiB cache, frozen splits and Week 5 checkpoint |
+| **G1-pre** | — | Shipped | 128×128 uint8 memmap cache with strict integrity |
+| **G1a** | — | Shipped | Conditional VAE model + dataset + tests |
+| **G1b** | `v0.1.0-g1b-cvae` | Shipped | 30-epoch cVAE training, diagnostics, model card |
+| **G1c** | `v0.1.1-g1c-closed` | **Closed (negative)** | Frozen-feature probe + audit + diagnostic: **synthetics are 0.6% residential** |
+| **Step 0** | — | Shipped | Residential label audit + Week 5 robustness report |
+
+The project's core contribution is the **diagnostic toolkit** — three scripts that answer "does a generative model produce useful synthetic data?" in ~30 minutes, before committing to a 2-hour fine-tune.
+
+## The finding
+
+A 30-epoch conditional VAE at 128×128 with 128-dim latent and MSE reconstruction:
+
+- **Trains correctly.** Converges by epoch 25 (best val loss 273.9), 49% reduction in reconstruction error, no KL collapse, 128/128 active latent dims.
+- **Produces diverse, non-memorized samples.** Pairwise cosine distance 0.365, 0/3000 above 0.95 nearest-neighbor similarity to real training images.
+- **Fails to produce residential samples.** A logistic regression classifier trained on real images only assigns **0.6% of 3,000 synthetic residential samples to residential** (90% to highway, 9.4% to city street).
+- **Is visually unrelated to the class.** See `outputs/g1c_diagnostic/nn_grid.png` — every synthetic is a blurred brown-gray gradient; the nearest real neighbors are sharp road scenes.
+
+The frozen-feature probe showed a weak, class-weight-dependent improvement under `balanced` weighting (+0.013 residential F1, 5/5 folds), but this reversed under `neutral` weighting (−0.010) and did not survive the representation-mismatch diagnostic.
+
+**Conclusion:** the cVAE at this scale (128×128, 128-dim latent, MSE) cannot generate class-faithful urban scenes. Blurry gradient samples that are classified 90% as highway are not useful augmentation for residential recognition. This is documented as `v0.1.1-g1c-closed`.
+
+## The diagnostic toolkit
+
+Three scripts answer "does a generative model produce useful synthetic data?" in ~30 minutes:
+
+| Script | Purpose | Output |
 |---|---|---|
-| **A** | Real BDD100K train only | Baseline |
-| **B** | Real + conventional augmentation (crop/flip/jitter) | Control — does synthetic beat trivial augmentation? |
-| **C** | Real + cVAE synthetic residential | VAE arm |
-| **D** | Real + DDPM synthetic residential | Diffusion arm |
-| **E** | Real + DCGAN synthetic residential | GAN arm |
+| `scripts/probe_pilot_features.py` | Frozen ResNet-50 features + logistic regression head; compares augmentation arms in ~10 min | Per-arm F1 with class-weight sensitivity |
+| `scripts/diagnose_g1c.py` | Real-only classifier on synthetic samples; nearest-neighbor grid; centroid distances | **The decisive "is it residential?" test** |
+| `scripts/audit_residential_labels.py` | OOF recall and confusion matrix on the residential label; suspect/confident grids | **Is the class itself well-posed?** |
 
-All five arms train fresh ResNet-50 models under the same protocol. The Week 5 ResNet-50 checkpoint is preserved as a historical reference (its 0.6984 macro-F1 motivates the residential focus) but is not used as Arm A.
+**Any future generative pipeline** (DDPM, ControlNet, GAN) can be tested with these before committing GPU hours to downstream training.
 
-**Pre-stated success criterion (frozen — not movable after results are seen):** a generative arm "works" if residential recall improves by ≥ +0.03 with a 95% bootstrap CI excluding zero, **and** macro-F1 does not degrade by more than −0.01. Evaluated on the real clean BDD100K test split (4,745 images).
+## The reused infrastructure
 
-**A negative result is a valid outcome.** If no generative arm beats arm A, the finding is: *"class-conditional generative models at this scale do not produce downstream-useful synthetic data for this task."* That is a real, documented research result — the same discipline UrbanMind-AI applied to its fusion negative results.
+UrbanGen-AI shares the following with UrbanMind-AI:
 
----
+- **Data:** `C:\Users\Janak Mallik\ml-data\bdd100k` (via `URBANINTEL_DATA_ROOT`)
+- **Split manifests:** `data/splits/resnet_{val,test}_{clean,excluded}.json` (frozen from UrbanMind-AI commit `dfcfaf7`)
+- **Cache:** `data/bdd100k_128/` — 128×128 uint8 memmap, verified by `scripts/precompute_bdd100k_128.py`
+- **Week 5 classifier:** `bdd_resnet50_best.pt` from UrbanMind-AI, evaluated on 4,745 clean test images
 
-## Project status — G0 complete, G1 next
+## Reusable artifacts
 
-| Milestone | Deliverable | Status |
-|---|---|---|
-| **G0** | Project setup, data provenance audit, scoping decision | ✅ Complete (CI green) |
-| **G1** | Conditional VAE training + sample quality | Next |
-| **G2** | Conditional DDPM in latent space + sample quality | Not started |
-| **G3** | Conditional DCGAN + mode-collapse analysis | Not started |
-| **G4** | Shared generative evaluation framework (FID/KID, memorization, class fidelity) | Not started |
-| **G5** | Five-arm downstream ResNet-50 experiment + bootstrap CIs | Not started |
-| **G6** | Comparative report + `v0.1.0-urbangen` release tag | Not started |
+- **`docs/robustness_report.md`** — Week 5 ResNet-50 macro-F1 by real BDD100K weather and time-of-day subgroups, with bootstrap CIs and cross-tabs
+- **`docs/model_cards/bdd100k_cvae_v1.md`** — the cVAE's training, sample quality, memorization, diversity, and class conditioning
+- **`outputs/label_audit/`** — OOF per-class recall, confusion matrix, suspect/confident residential grids, per-image probabilities
+- **`outputs/g1c_diagnostic/nn_grid.png`** — 8 synthetics × 7 nearest real neighbors (residential and non-residential)
 
----
+## The cross-project finding
 
-## What G0 established
+The Week 5 ResNet-50 from UrbanMind-AI is a **city-street detector**: 95% recall on city, 56% on highway, **12% on residential** on the clean test split. This is consistent with all prior weak-residential-recall results (Week 5, Week 9a, G1b) and is now documented in the robustness report.
 
-The foundational discipline: **no generative model code before data and checkpoint provenance is verified.** G0's audit (`scripts/audit_data_provenance.py`) verifies:
+The residential label itself is boundary-ambiguous: out-of-fold logistic regression on ResNet-50 features achieves 0.70 residential recall, but ~30% of labeled residential images are confidently classified as city street. The class is fuzzy at the BDD100K definition, not mislabeled.
 
-- BDD100K label JSON SHA-256 (`c1998792…` train, `c835be65…` val)
-- The four `resnet_*` split manifests partition the 9,864-image validation pool into four disjoint sets (verified partition integrity)
-- Class counts (train: 43,516 city street / 17,379 highway / 8,074 residential = 68,969)
-- Week 5 ResNet-50 checkpoint SHA-256 (`f760b94c…`), structure (plain state_dict, 320 tensors, `fc` (3, 2048)), and loadability
+## What this project is NOT
 
-Any future drift in manifests or checkpoint fails the audit and halts the experiment. The full provenance record is in [`docs/dataset_cards/bdd100k_generative.md`](docs/dataset_cards/bdd100k_generative.md). The scoping decision (research question, five arms, success criterion) is frozen in [`docs/experiments.md`](docs/experiments.md).
+- **Not a generative-model success.** The cVAE failed to produce class-faithful samples. G1c documents why.
+- **Not a claim that all generative augmentation is useless.** DDPM, ControlNet, and image-to-image approaches were not tested. The diagnostic toolkit is what they can be tested with.
+- **Not a claim that the residential class is unlearnable.** The label is fuzzy at the boundary, but the confident 70% are genuinely residential.
+- **Not "trained from scratch"** for future work — pretrained diffusion approaches are a legitimate next direction, documented separately.
 
-**Not claimed:** historical reproduction of UrbanMind-AI's Week 5 `train_test_split(seed=42)` output, or reproduction of its 0.6984 test macro-F1. The manifests are consumed as frozen artifacts; the checkpoint is reused but its historical F1 is a reference value, not re-derived by UrbanGen-AI.
+## How to read this repo
 
----
-
-## Generative models — results
-
-Results will be populated as each milestone ships. The table is deliberately honest: `[not yet run]` rows are placeholders, not claims.
-
-| Model | Dataset | Status | FID | Sample quality | Model card |
-|---|---|---|---|---|---|
-| **cVAE** (conditional, resolution TBD after profiling) | BDD100K train | [G1 — not yet run] | — | — | — |
-| **Conditional DDPM** (latent space) | BDD100K train + cVAE latents | [G2 — not yet run] | — | — | — |
-| **Conditional DCGAN** (resolution TBD after profiling) | BDD100K train | [G3 — not yet run] | — | — | — |
-
----
-
-## Downstream augmentation experiment
-
-The five-arm ResNet-50 comparison (G5). Primary metric: residential recall. Guardrail: macro-F1 not degrading by more than 0.01. Bootstrap CIs (1,000 paired resamples).
-
-| Arm | Residential recall | Δ vs A | 95% CI | Macro-F1 | Δ vs A |
-|---|---|---|---|---|---|
-| A — Real only | [G5 — not yet run] | — | — | — | — |
-| B — Conventional aug | — | — | — | — | — |
-| C — cVAE aug | — | — | — | — | — |
-| D — DDPM aug | — | — | — | — | — |
-| E — DCGAN aug | — | — | — | — | — |
-
----
-
-## Provenance (frozen)
-
-UrbanGen-AI consumes the following published artifacts from UrbanMind-AI at commit `dfcfaf7` (tag `v0.10.0-week10-calibration`):
-
-| Artifact | SHA-256 (prefix) | Role |
-|---|---|---|
-| `bdd100k_labels_images_train.json` | `c1998792…` | Source of the 68,969 training images |
-| `bdd100k_labels_images_val.json` | `c835be65…` | Source of val/test partition |
-| `resnet_val_clean.json` (4,727 entries) | `9ee1b6c6…` | Validation split |
-| `resnet_test_clean.json` (4,745 entries) | `ca47e16a…` | **Final test split** — held out from all UrbanGen model development and model selection. Previously used in UrbanMind-AI's Week 5 and Week 9a work for those projects' own baselines; disclosed for transparency. |
-| `resnet_val_excluded.json` (205) | `05d54fda…` | Contamination record |
-| `resnet_test_excluded.json` (187) | `ec48bc01…` | Contamination record |
-| `bdd_resnet50_best.pt` | `f760b94c…` | Week 5 ResNet-50 baseline — historical reference checkpoint, not part of the five-arm protocol |
-
-Full hashes, split semantics, and the documented class-distribution discrepancy vs UrbanMind-AI's Week 5 card are in [`docs/dataset_cards/bdd100k_generative.md`](docs/dataset_cards/bdd100k_generative.md).
-
-**The manifests are frozen inputs.** Their partition integrity is verified; historical reproduction of the Week 5 seed-42 `train_test_split` is out of scope.
-
----
+1. **Start with the research question** (above). Then read [`docs/experiments.md`](docs/experiments.md) for the scoping decision and G1c's diagnostic.
+2. **Read the cVAE model card** at [`docs/model_cards/bdd100k_cvae_v1.md`](docs/model_cards/bdd100k_cvae_v1.md) for what the trained model can and cannot do.
+3. **Read the robustness report** at [`docs/robustness_report.md`](docs/robustness_report.md) for the Week 5 model's per-weather and per-time performance.
+4. **Inspect the diagnostic scripts** — `scripts/diagnose_g1c.py` and `scripts/probe_pilot_features.py` are the reusable toolkit.
+5. **Look at `outputs/g1c_diagnostic/nn_grid.png`** — the visual that made the failure visible.
 
 ## Setup
 
@@ -118,8 +100,8 @@ Full hashes, split semantics, and the documented class-distribution discrepancy 
 
 - Python 3.12
 - [`uv`](https://docs.astral.sh/uv/) for dependency management
-- CUDA-capable GPU with ≥ 6 GB VRAM (for generative training; CI runs on CPU)
-- A local BDD100K checkout and a local UrbanMind-AI checkout (provenance is consumed from there)
+- CUDA-capable GPU with ≥ 6 GB VRAM (for training and inference; CI runs on CPU)
+- A local BDD100K checkout and a local UrbanMind-AI checkout
 
 ### Installation
 
@@ -127,81 +109,76 @@ Full hashes, split semantics, and the documented class-distribution discrepancy 
 git clone https://github.com/janakmallik/UrbanGen-AI.git
 cd UrbanGen-AI
 
-# Install dependencies (uses CPU torch on CI; CUDA torch on a GPU machine via the pinned index)
 uv sync --extra dev
 
-# Configure local paths
 Copy-Item .env.example .env
 # Edit .env:
 #   URBANINTEL_DATA_ROOT = parent directory containing bdd100k/
 #   URBANMIND_REPO       = path to a local UrbanMind-AI checkout
 
-# Verify setup
 uv run python scripts\audit_data_provenance.py
 # expected: AUDIT PASS -- all checks green
 
-# Run unit tests
 uv run pytest -v
 ```
 
 `.env` is gitignored. Never commit your local paths.
 
----
+## Reproduce the diagnostics
 
-## How to read this repo
+```powershell
+# 1. Verify the cache
+uv run python scripts\audit_data_provenance.py
 
-1. **Start with the research question** (above). If the question doesn't interest you, the rest won't either.
-2. **Read the scoping decision** in [`docs/experiments.md`](docs/experiments.md) — the G0 entry has the five-arm design, pre-stated success criterion, and out-of-scope list.
-3. **Read the data provenance record** in [`docs/dataset_cards/bdd100k_generative.md`](docs/dataset_cards/bdd100k_generative.md) — what's frozen, what's verified, what's not claimed.
-4. **Read one model card** (once G1 ships) — the cVAE card will be the first.
-5. **Look at `scripts/audit_data_provenance.py`** — eight sections, all fatal on failure. It's the foundation.
+# 2. Label audit (Step 0a) — 15 min
+uv run python scripts\audit_residential_labels.py
 
-The design notes in [`CONCEPTS.md`](CONCEPTS.md) cover the generative-model concepts this project exercises (VAEs, diffusion, GANs, mixed precision, etc.) in plain language.
+# 3. Robustness report (Step 0b) — 5 min
+uv run python scripts\robustness_report.py
 
----
+# 4. Reproduce the cVAE training (30 min)
+uv run python scripts\train_cvae.py --epochs 30
 
-## What this project is NOT
-
-- **Not a Stable Diffusion project.** No pretrained SD fine-tuning, no Stable Diffusion from scratch. All three generative models are trained on BDD100K from random initialization.
-- **Not a claim that generative augmentation improves urban perception.** G5 tests this; the outcome may be negative.
-- **Not a replacement for UrbanMind-AI.** It consumes UrbanMind-AI's published artifacts; it never modifies them.
-- **Not a claim about arbitrary urban scenes.** BDD100K is dashcam footage from a small set of cities. Generative models trained on it reflect that distribution.
-- **Not deployed.** No API, no Docker, no serving. Generation happens offline.
-
----
+# 5. Reproduce the negative finding (~15 min)
+uv run python scripts\diagnose_g1c.py
+```
 
 ## Project structure
 
 ```text
 UrbanGen-AI/
-├── configs/                    # YAML configs (data, models, experiments)
+├── configs/
 ├── data/
-│   └── splits/                 # Frozen split manifests (committed)
+│   └── splits/                 # Frozen split manifests
 ├── docs/
 │   ├── dataset_cards/          # Dataset provenance
-│   ├── model_cards/            # One per trained generative model
-│   └── experiments.md          # Running journal
+│   ├── model_cards/            # cVAE model card
+│   ├── experiments.md          # Running journal (G0 through Step 0)
+│   └── robustness_report.md    # Week 5 subgroup evaluation
 ├── scripts/
 │   ├── audit_data_provenance.py
-│   └── (train_*.py, generate_*.py as milestones land)
+│   ├── audit_residential_labels.py
+│   ├── robustness_report.py
+│   ├── probe_pilot_features.py
+│   ├── diagnose_g1c.py
+│   ├── train_cvae.py
+│   ├── generate_cvae_samples.py
+│   ├── evaluate_cvae.py
+│   ├── diagnose_class_conditioning.py
+│   ├── diagnose_blur_aware_evaluator.py
+│   ├── diagnose_classifier_pipeline.py
+│   ├── precompute_bdd100k_128.py
+│   └── profile_gpu_cvae.py
 ├── src/urbangen/
-│   ├── config.py               # Env-var config (reads .env)
-│   ├── data/                   # BDD100K generative loader
-│   ├── models/
-│   │   ├── cvae/               # [G1]
-│   │   ├── diffusion/          # [G2]
-│   │   └── dcgan/              # [G3]
-│   ├── training/
-│   ├── generation/
-│   ├── evaluation/             # [G4]
-│   └── experiments/
-├── tests/unit/                 # 3 smoke tests at G0
+│   ├── config.py
+│   ├── data/bdd100k_generative.py
+│   ├── models/cvae/model.py
+│   └── training/losses.py
+├── tests/unit/                 # 34 tests
 ├── .env.example
 ├── pyproject.toml
 └── README.md
 ```
-
----
 
 ## License
 
@@ -209,46 +186,16 @@ MIT — see [LICENSE](LICENSE).
 
 ## Citation
 
-### The dataset
-
-BDD100K is the source dataset and should be cited directly:
-
-```bibtex
-@inproceedings{yu2020bdd100k,
-  title={BDD100K: A Diverse Driving Dataset for Heterogeneous Multitask Learning},
-  author={Yu, Fisher and Chen, Haofeng and Wang, Xin and Xian, Wenqi and Chen, Yingying and Liu, Fangchen and Madhavan, Vashisht and Darrell, Trevor},
-  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2020}
-}
-```
-
-### This project
-
-UrbanGen-AI is not a peer-reviewed publication and does not make priority claims. If you use these models, samples, or results, please reference the project by its **release tag**, which pins a specific, reproducible state:
+If you reference this project, cite BDD100K (Yu et al., CVPR 2020) as the dataset, and this repository by its tag for the software artifact:
 
 ```bibtex
 @software{urbangen_2026,
-  title   = {UrbanGen-AI: Class-Conditional Generative Models for Urban Scene Augmentation},
+  title   = {UrbanGen-AI: Diagnosing Whether From-Scratch Generative Models Produce Useful Synthetic Urban Data},
   author  = {Mallik, Janak},
   year    = {2026},
   url     = {https://github.com/janakmallik/UrbanGen-AI},
-  note    = {Release <tag>, commit <sha>. Consumes BDD100K splits from
-             UrbanMind-AI v0.10.0-week10-calibration}
+  note    = {Release v0.1.1-g1c-closed. Consumes BDD100K splits from UrbanMind-AI v0.10.0-week10-calibration}
 }
 ```
 
-The `<tag>` and `<sha>` placeholders fill in at G6 when `v0.1.0-urbangen` ships. Until then, cite by repository URL + current `main` branch.
-
-**For exact artifact provenance:**
-- Checkpoint SHA-256s are in each model card.
-- Split manifest SHA-256s are in `docs/dataset_cards/bdd100k_generative.md`.
-- Full provenance chain is recorded in `docs/experiments.md`.
-- A `CITATION.cff` file at repo root provides the "Cite this repository" button on GitHub.
-
-### What this project does NOT claim
-
-- **Not a peer-reviewed result.** No methods novelty claim beyond the integration and evaluation approach.
-- **Not a priority claim.** If you independently train a cVAE on BDD100K, that's fine — this project isn't claiming to have done it first.
-- **Not a result about urban perception in general.** All claims are scoped to BDD100K scene classification under the five-arm protocol in `docs/experiments.md`.
-
-**If you want to formally cite it in an academic paper, the right reference is the repository tag, not a formal BibTeX entry.** Reviewers understand "GitHub repository, tag vX.Y.Z" as a legitimate reference for software artifacts — the [Software Heritage](https://www.softwareheritage.org/) archive and Zenodo DOI-on-release patterns exist for exactly this. Adding a `CITATION.cff` file (see below) makes it automatic.
+See `CITATION.cff` for the full reference.
