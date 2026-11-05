@@ -5,11 +5,16 @@
 > verification (`outputs/pipeline_verification/pipeline_verification.json`)
 > shows that this pipeline reduces Week 5's residential recall from
 > **0.41** (native JPEGs, Resize(256)→CenterCrop(224)) to **0.12** — a
-> 3.3× degradation caused by the input pipeline, not the model. The
-> per-weather and per-time subgroup numbers in this report are therefore
-> invalid. A corrected report at condition (a) will replace this file.
-> The original is preserved here as a documented artifact of the
-> pipeline-mismatch bug.
+> 3.3× degradation caused by the input pipeline, not by model weakness.
+> The 0.12 value was measuring the wrong input.
+>
+> The per-weather and per-time subgroup numbers below are measured on
+> the same wrong pipeline. They are **not reliable** and will be
+> replaced by a corrected report at condition (a).
+>
+> The original report is preserved here as a documented artifact of the
+> pipeline-mismatch bug. Do not cite the numbers below as the model's
+> actual weather/time performance.
 
 Evaluates UrbanMind-AI's Week 5 ResNet-50 on the clean BDD100K test split, broken down by weather and time-of-day attributes from the BDD100K label JSONs.
 

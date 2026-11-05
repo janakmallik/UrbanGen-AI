@@ -611,48 +611,79 @@ No new model trained. No generative experiment run. The diagnostics establish wh
 The robustness report above (Step 0b) was generated using the 128×128
 cache content strip upsampled to 224×224. Pipeline verification
 (`scripts/verify_week5_pipeline.py`, `outputs/pipeline_verification/`)
-established that this pipeline is wrong:
+established that this is a different pipeline from Week 5's training
+pipeline, and it changes the model's behavior substantially.
 
-| Condition | macro-F1 | residential recall |
-|---|---|---|
-| (a) Native JPEG, Resize(256)→CenterCrop(224) [Week 5 training] | 0.6986 | 0.4078 |
-| (b) Native JPEG, resize full frame to 224×224 (squashed) | 0.7283 | **0.5178** |
-| (c) 128×128 cache content strip → 224×224 | 0.5710 | **0.1235** |
+**Three-condition verification (all on the clean 4,745-image test
+subset; condition (a) also on the full 4,932-image split as a
+reference check):**
 
-The reference check reproduces published Week 5 (0.6984 macro-F1,
-0.4121 residential recall) exactly at condition (a).
+| Condition | n | accuracy | macro-F1 | city | highway | residential |
+|---|---|---|---|---|---|---|
+| (a) native JPEG → Resize(256)→CenterCrop(224) [reference, full test] | 4,932 | **0.7800** | **0.6984** | 0.8825 | 0.7136 | 0.4121 |
+| (a) native JPEG → Resize(256)→CenterCrop(224) [clean test] | 4,745 | 0.7819 | 0.6986 | 0.8839 | 0.7163 | 0.4078 |
+| (b) native JPEG → resize full frame to 224×224 (squashed) | 4,745 | 0.7966 | 0.7283 | 0.9076 | 0.6625 | 0.5178 |
+| (c) 128×128 cache content strip → 224×224 | 4,745 | 0.7503 | 0.5710 | 0.9545 | 0.5591 | 0.1235 |
 
-**Conclusions retracted:**
-- "Residential recall = 0.124" — this is the model's performance on the
-  wrong pipeline. The correct value is **0.408** at condition (a), or
-  **0.518** at condition (b).
-- "Residential weakness dominates" — residential is weaker than city/highway,
-  but at 0.41 not 0.12. The gap is ~0.51 (city) vs ~0.41 (residential),
-  not ~0.95 vs ~0.12.
-- "Rainy is a real gap (0.481 vs 0.577)" — measured on the wrong pipeline.
-  Needs rerun at condition (a).
-- "Night is not a weakness" — measured on the wrong pipeline, and the
-  per-class within-subgroup analysis is required (macro-F1 hides class-mix
-  effects). Needs rerun.
-- "Snowy is a moderate gap" — same. Needs rerun.
+**Reference check:** condition (a) on the full 4,932 test images
+reproduces the published Week 5 card exactly (acc 0.7800, macro-F1
+0.6984, residential recall 0.4121). The checkpoint, class mapping,
+and preprocessing are verified.
 
-**New finding from verification:** the squashed pipeline (b) outperforms
-the training pipeline (a) by +0.030 macro-F1 and +0.11 residential recall.
-Week 5's center-crop discards 43% of a 16:9 frame's width; squashing
-keeps the full frame. This suggests the model is more robust than
-published. Not pursued in this project — a documented finding for
-UrbanMind-AI's Week 5 or Week 12 work.
+**Clean subset effect:** (a) full vs (a) clean — macro-F1 delta +0.0002,
+residential delta −0.0044. The excluded 187 images do not affect the
+model's behavior.
 
-**Corrected robustness report at condition (a) will replace
-`docs/robustness_report.md`.**
+**Pipeline effect:** condition (c) reduces macro-F1 by −0.128 and
+residential recall by −0.284 relative to condition (a). The 0.12
+residential recall reported in the robustness report was measuring the
+wrong input pipeline.
 
-The label audit (Step 0a) is unaffected — it used frozen features, not
-Week 5's classifier.
+**Exploratory finding (b):** the squashed-full-frame pipeline
+outperforms the training pipeline by +0.030 macro-F1 and +0.110
+residential recall on the test set. **This was observed on test, so
+it is exploratory and does not justify any deployment change.**
+A hypothesis (untested): Week 5's training transforms include
+RandomResizedCrop, which stretches aspect ratios; the squashed frame
+may sit closer to that training distribution. To adopt (b) for any
+purpose, it must first be validated on the val split with a paired
+bootstrap, then confirmed once on test.
 
-**Lessons:** pipeline mismatch between training and evaluation is the
-same class of bug as train-serve skew. It's silent, it degrades results,
-and it's caught only by a reference check (evaluate the model on its
-training pipeline, verify published numbers reproduce exactly).
+**What is retracted:**
+- "Residential recall = 0.124" — this was the model's performance on the
+  wrong input pipeline. The correct value is 0.408 (condition a) on the
+  clean test set. The 0.124 does **not** reflect the model's actual
+  residential ability; it reflects a train-test preprocessing shift.
+- "Residential weakness dominates" — overstated. At condition (a),
+  city recall is 0.88, highway 0.72, residential 0.41. Residential is
+  the weakest class, but the gap is 0.47 (city vs residential), not
+  0.83 (0.95 vs 0.12).
+- All weather/time subgroup conclusions (rainy real gap, night no gap,
+  snowy moderate gap) — measured on the wrong pipeline. Must be
+  rerun at condition (a).
+
+**What is not retracted:**
+- The label audit (Step 0a) — used frozen features, not Week 5's
+  classifier. The 0.70 OOF residential recall, suspect rate, and grids
+  are valid (with the caveat that the recall figure overstates signal
+  because precision is 0.37).
+- The G1c cVAE finding (0.6% synthetic residential in a real-only
+  classifier) — real and synthetic images both went through the cache
+  pipeline, so the comparison is internally consistent. The 0.6%
+  reflects the cVAE's inability to produce class-faithful samples at
+  128px; it does not establish that residential cues are absent at
+  128px (the frozen-feature audit found ~0.70 OOF recall on cache
+  features, so some signal exists).
+
+**Corrected robustness report at condition (a) is next.**
+The current `docs/robustness_report.md` is preserved with a SUPERSEDED
+banner.
+
+**Lesson:** the pipeline mismatch between training and evaluation is
+the same class of bug as train-serve skew: silent, and only caught by a
+reference check (evaluate the model on its training pipeline, verify
+published numbers reproduce exactly). The reference check must be a
+permanent test.
 
 ---
 
