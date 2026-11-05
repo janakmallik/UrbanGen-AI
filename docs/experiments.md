@@ -421,4 +421,105 @@ ineffectiveness.
 - Model card: `docs/model_cards/bdd100k_cvae_v1.md`
 - Sample grid: `docs/model_cards/cvae_samples_beta1_seed42.png`
 
+
+---
+
+## 2026-11-06 — G1c: frozen-feature pilot and diagnostic (closed)
+
+Hypothesis: Adding 3,000 cVAE-generated synthetic residential images to real BDD100K training data measurably improves residential recall on the real val split, beyond baseline and non-generative controls.
+
+### Probe setup
+
+Frozen ImageNet-pretrained ResNet-50 features (2048-d), logistic regression head.
+Real train: 68,969 images. Real val: 4,727 (587 residential).
+No fine-tuning; no test-set access. See `scripts/probe_pilot_features.py`.
+
+### Probe results (real val split)
+
+| Arm | Residential P | Residential R | Residential F1 | Macro-F1 |
+|---|---|---|---|---|
+| A — Real only | 0.3996 | 0.7019 | 0.5093 | 0.6486 |
+| B — Real + 3,000 cVAE synthetic residential | **0.4340** | 0.6440 | **0.5185** | **0.6563** |
+| C — Real + 3,000 real residential oversampled | 0.3967 | 0.6968 | 0.5056 | 0.6471 |
+| D — Real only, class-weighted (identical to A in frozen-feature probe) | 0.3996 | 0.7019 | 0.5093 | 0.6486 |
+
+Under the `balanced` class_weight setting, arm B had +0.0092 residential F1 over A and +0.0130 over C.
+
+### Audit — the deltas are not robust
+
+**Check 1 — class_weight sensitivity.** B − A on residential F1 under four class_weight settings:
+
+| class_weight | B − A residential F1 |
+|---|---|
+| `balanced` | **+0.0092** |
+| `none` | **−0.0099** |
+| `{0:1, 1:1, 2:2}` | +0.0059 |
+| `{0:1, 1:1, 2:4}` | **−0.0023** |
+
+The delta flips sign depending on the class_weight setting. Under neutral weighting, arm B is worse than arm A by −0.01. The `balanced` improvement is a classifier interaction with the class_weight setting, not a robust synthetic-data effect.
+
+**Check 2 — feature-space statistics (ResNet-50, 2048-d):**
+
+- Synthetic → nearest real residential cosine: mean 0.4386, max 0.6612
+- Synthetic → nearest real non-residential cosine: mean 0.4887
+- `>= 0.95` (memorization): 0/3000 — synthetics are not memorized
+- Diversity (pairwise cosine distance): 0.3653 — synthetics are diverse
+
+**Check 3 — 5-fold CV on train:**
+Run for all 5 folds under `balanced` weighting.
+
+| Fold | A F1 | B F1 | Delta |
+|---|---|---|---|
+| 1 | 0.4989 | 0.5160 | +0.0170 |
+| 2 | 0.4969 | 0.5084 | +0.0115 |
+| 3 | 0.4945 | 0.5074 | +0.0129 |
+| 4 | 0.5000 | 0.5100 | +0.0100 |
+| 5 | 0.4876 | 0.5025 | +0.0149 |
+
+A: mean 0.4956, std 0.0044. B: mean 0.5089, std 0.0043. B − A: mean +0.0133, std 0.0025, positive folds 5/5. Under `balanced` weighting, adding synthetic residential features improves residential F1 consistently. This is a within-distribution consistency result, not a robustness proof — the 5 folds share most training data.
+
+### Final diagnostic — representation mismatch
+
+See `scripts/diagnose_g1c.py`. Real-only logistic regression classifier (trained on real train features only, no synthetic) applied to 3,000 cVAE-generated samples:
+
+| Predicted class | Count | Percentage |
+|---|---|---|
+| Highway | 2,700 | 90.0% |
+| City street | 283 | 9.4% |
+| **Residential** | **17** | **0.6%** |
+
+**Feature-space centroid cosine:**
+
+| Class | Cosine |
+|---|---|
+| Highway centroid | 0.2282 |
+| Residential centroid | 0.2281 |
+| City street centroid | 0.2195 |
+
+The synthetics are equidistant from highway and residential centroids, and farther from city street. They are feature-space noise between the two larger classes.
+
+**Visual inspection of `nn_grid.png`:** each row shows one synthetic followed by its 3 nearest real residential and 3 nearest real non-residential images. Every synthetic is a blurred brown-gray gradient blob with no lane structure, buildings, or scene content. Real neighbors are sharp road scenes. The synthetics are visually unrelated to the class they were conditioned on.
+
+**Diagnosis: REPRESENTATION MISMATCH.** The cVAE's 128×128 latent + MSE reconstruction at 30 epochs produces samples that do not occupy the residential feature region. A real-only classifier assigns 0.6% of synthetics to residential, versus 90% to highway. This explains the frozen-feature probe's inconsistency — the samples are not residential, so adding them to a residential augmentation arm cannot produce a robust residential-recall improvement.
+
+### What G1c establishes
+
+1. The cVAE's synthetic residential samples are not feature-space residential. A real-only classifier assigns 0.6% to residential.
+2. The apparent `balanced`-weighting improvement in the probe (+0.0092 residential F1) is not robust to class_weight choice.
+3. The 5-fold consistency under `balanced` weighting is real but conditional on that setting. It does not justify a full fine-tune.
+4. The synthetics are diverse and not memorized; the failure is representation, not mode collapse or copy-reproduction.
+
+### Preserved baseline
+
+`v0.1.0-g1b-cvae` remains the G1b milestone. No fine-tune was run. G1c is documented as a negative result with a specific, diagnosed cause.
+
+### Files
+
+- `scripts/probe_pilot_features.py` — frozen-feature probe
+- `scripts/audit_probe.py` — class_weight sensitivity + feature-space + 5-fold CV
+- `scripts/diagnose_g1c.py` — representation-mismatch diagnostic
+- `scripts/train_pilot_arm.py`, `scripts/evaluate_pilot.py` — written but not run (kept for reference)
+- `outputs/g1c_probe/probe_results.json`, `outputs/g1c_probe/audit_results.json`
+- `outputs/g1c_diagnostic/diagnostic.json`, `outputs/g1c_diagnostic/nn_grid.png`
+
 ---
