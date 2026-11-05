@@ -1,5 +1,16 @@
 # Week 5 ResNet-50 — Robustness Report Card
 
+> **SUPERSEDED (2026-11-06).** This report was generated using the
+> 128×128 cache content strip upsampled to 224×224. Pipeline
+> verification (`outputs/pipeline_verification/pipeline_verification.json`)
+> shows that this pipeline reduces Week 5's residential recall from
+> **0.41** (native JPEGs, Resize(256)→CenterCrop(224)) to **0.12** — a
+> 3.3× degradation caused by the input pipeline, not the model. The
+> per-weather and per-time subgroup numbers in this report are therefore
+> invalid. A corrected report at condition (a) will replace this file.
+> The original is preserved here as a documented artifact of the
+> pipeline-mismatch bug.
+
 Evaluates UrbanMind-AI's Week 5 ResNet-50 on the clean BDD100K test split, broken down by weather and time-of-day attributes from the BDD100K label JSONs.
 
 - **Total test images:** 4745

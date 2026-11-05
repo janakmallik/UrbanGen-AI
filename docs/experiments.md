@@ -604,3 +604,55 @@ No new model trained. No generative experiment run. The diagnostics establish wh
 **The dominant finding — residential class boundary is fuzzy — is not addressable by generative augmentation.** Any future direction that assumes "more residential training data would help" should account for this: the label itself is partly city-street-like, so the task is ambiguous at the class definition level.
 
 ---
+
+
+### Correction (2026-11-06) — pipeline mismatch invalidates the robustness report
+
+The robustness report above (Step 0b) was generated using the 128×128
+cache content strip upsampled to 224×224. Pipeline verification
+(`scripts/verify_week5_pipeline.py`, `outputs/pipeline_verification/`)
+established that this pipeline is wrong:
+
+| Condition | macro-F1 | residential recall |
+|---|---|---|
+| (a) Native JPEG, Resize(256)→CenterCrop(224) [Week 5 training] | 0.6986 | 0.4078 |
+| (b) Native JPEG, resize full frame to 224×224 (squashed) | 0.7283 | **0.5178** |
+| (c) 128×128 cache content strip → 224×224 | 0.5710 | **0.1235** |
+
+The reference check reproduces published Week 5 (0.6984 macro-F1,
+0.4121 residential recall) exactly at condition (a).
+
+**Conclusions retracted:**
+- "Residential recall = 0.124" — this is the model's performance on the
+  wrong pipeline. The correct value is **0.408** at condition (a), or
+  **0.518** at condition (b).
+- "Residential weakness dominates" — residential is weaker than city/highway,
+  but at 0.41 not 0.12. The gap is ~0.51 (city) vs ~0.41 (residential),
+  not ~0.95 vs ~0.12.
+- "Rainy is a real gap (0.481 vs 0.577)" — measured on the wrong pipeline.
+  Needs rerun at condition (a).
+- "Night is not a weakness" — measured on the wrong pipeline, and the
+  per-class within-subgroup analysis is required (macro-F1 hides class-mix
+  effects). Needs rerun.
+- "Snowy is a moderate gap" — same. Needs rerun.
+
+**New finding from verification:** the squashed pipeline (b) outperforms
+the training pipeline (a) by +0.030 macro-F1 and +0.11 residential recall.
+Week 5's center-crop discards 43% of a 16:9 frame's width; squashing
+keeps the full frame. This suggests the model is more robust than
+published. Not pursued in this project — a documented finding for
+UrbanMind-AI's Week 5 or Week 12 work.
+
+**Corrected robustness report at condition (a) will replace
+`docs/robustness_report.md`.**
+
+The label audit (Step 0a) is unaffected — it used frozen features, not
+Week 5's classifier.
+
+**Lessons:** pipeline mismatch between training and evaluation is the
+same class of bug as train-serve skew. It's silent, it degrades results,
+and it's caught only by a reference check (evaluate the model on its
+training pipeline, verify published numbers reproduce exactly).
+
+---
+
