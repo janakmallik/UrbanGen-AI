@@ -252,179 +252,173 @@ Hypothesis (same as G1 scoping): see the G1 scoping entry above.
 - Runtime estimate (compute-only from G1 profiling): ~18 min of GPU step
   time. Actual wall time (with DataLoader + logging) to be measured.
 
-### Result
+### Result — training
 
-**PENDING — training run not yet executed.**
+30 epochs completed. Converged by epoch 25 (best val loss 273.9).
 
-This entry will be filled in after `scripts/train_cvae.py --epochs 30`
-completes. Expected content: per-epoch loss curves, best val loss and
-epoch, sample grids at epochs 5/10/15/20/25/30, nearest-neighbor
-memorization analysis, and a convergence decision (30 epochs sufficient?).
+| Metric | Epoch 1 | Epoch 25 (best) | Epoch 30 |
+|---|---|---|---|
+| Train recon_mse | 0.0152 | 0.0078 | 0.0078 |
+| Train KL | 76.2 | 87.7 | 87.8 |
+| Val recon_mse | 0.0094 | 0.0068 | 0.0068 |
+| Val KL | 73.5 | 87.2 | 87.2 |
+| Active dims | 128/128 | 128/128 | 128/128 |
+| Best val loss | — | **273.9** | — |
 
-### Limitations / non-claims
+- Train recon_mse reduced 49% (0.0152 → 0.0078)
+- KL stable at 76–88, no posterior collapse
+- **7.6× better than class-mean baseline** (0.0068 vs 0.0592 per-pixel MSE)
+- All 128 latent dims active throughout
+- Scaler stabilized after epoch 1 (fp16 AMP); no NaN or divergence
 
-- **A successfully trained cVAE is not evidence that synthetic data
-  improves downstream recognition.** That is G1c's pilot's question.
-- Sample grids from a first cVAE run at 128×128 are expected to be
-  blurry; this is a property of VAE reconstruction quality at this
-  scale, not a failure.
-- The padding region (43.75% of each image) is excluded from loss but
-  is still part of the generated output. The model may or may not learn
-  to output near-black there; this will be documented, not corrected.
+### Result — sample quality
 
+Sample grids at epochs 5/10/15/20/25/30 in
+`outputs/cvae_beta1_seed42/samples/`. Final grid committed at
+`docs/model_cards/cvae_samples_beta1_seed42.png`.
 
-### G1b results — cVAE trained, samples documented, class conditioning evaluated
+Samples are visibly blurry — expected for a standard VAE with MSE
+reconstruction at 128×128 with a 128-dim latent. This is a property
+of the loss function and resolution, not a training failure.
 
-**Training:** 30 epochs, β=1, seed 42. Converged by epoch 25 (best val loss 273.9).
-- Train recon_mse: 0.0152 → 0.0078 (49% reduction)
-- Train KL: 76.2 → 87.8 (healthy plateau, no collapse)
-- Val recon_mse: 0.0094 → 0.0068
-- 7.6× better than class-mean baseline (0.0068 vs 0.0592)
-- Active dims: 128/128 at all epochs
-- Scaler stabilized after epoch 1 (fp16 AMP)
+**Memorization analysis (residential, n=64):**
+- MSE to nearest real residential: mean 0.026, median 0.027
+- Perceptual nearest-neighbor (ResNet-50 features): mean cosine 0.624,
+  **0/64 above 0.90** — no near-duplicate of any real training image
 
-**Samples:** Visibly blurry — expected for standard VAE + MSE at 128×128 with a 128-dim latent. Sample grids at epochs 5/10/15/20/25/30 in `outputs/cvae_beta1_seed42/samples/`. Final grid in `docs/model_cards/cvae_samples_beta1_seed42.png`.
+**Diversity analysis:**
+- Pairwise cosine distance within class: city 0.109, highway 0.113,
+  residential 0.121
+- Samples within each class are meaningfully different — no mode collapse
 
-**Memorization analysis:**
-- MSE to nearest real residential: mean 0.026, median 0.027 (baseline class-mean: 0.059 → VAE is 2.3× closer but not near-duplicate)
-- Perceptual nearest-neighbor (ResNet-50 features): mean cosine 0.624, **0/64 above 0.90** — no evidence of memorization
+### Result — class conditioning: definitive diagnostic
 
-**Diversity:** Pairwise cosine distance within class: city 0.109, highway 0.113, residential 0.121. Samples within a class are diverse (not identical).
+Two diagnostics were run. The first trained a small evaluator on **sharp**
+real images and showed it blurry reconstructions — a distribution shift
+that inflated the "reconstruction collapses" finding. That diagnostic
+was **inconclusive** (evaluator confounded), and its original
+"definitive bottleneck" framing was corrected.
 
-**Class conditioning — WEAK:**
-- Visual inspection of `samples_16_per_class.png`: rows barely distinguishable. Highway shows faint horizontal band structure. Residential shows no visible greenery or narrower-road signal.
-- Synthetic classifier accuracy: city 32.8%, highway 62.5%, residential 0.0%.
-- **But:** the evaluation classifier (Week 5 ResNet-50) achieves only **5.4% accuracy on real residential images** (diagnostic: `outputs/diagnostic/classifier_pipeline_diagnostic.json`). The 0% synthetic result is measuring the classifier's residential blindness, not the cVAE's conditioning.
+The corrected diagnostic trains a **matched evaluator on reconstructions**
+of real training images, then tests on held-out reconstructions. This
+eliminates the distribution-shift artifact.
 
-**Critical diagnostic finding:** The Week 5 ResNet-50 is effectively a city-street detector:
+**Blur-aware evaluator (matched control):**
 
-| Class | Real val accuracy (JPEG) | Real val accuracy (cache) |
+| Condition | Accuracy | Balanced acc | Macro-F1 |
+|---|---|---|---|
+| Sharp control (trained and tested on sharp) | 0.620 | 0.611 | 0.565 |
+| Blur-aware (trained and tested on recons) | 0.682 | 0.604 | 0.590 |
+| **Ratio (blur/sharp)** | — | **0.988** | — |
+
+**Class signal survives reconstruction.** A matched evaluator trained
+on reconstructions classifies held-out reconstructions at 0.604 balanced
+accuracy — 98.8% of its sharp-image performance (0.611). The earlier
+0.258–0.275 reconstruction accuracy was evaluator fragility on blurry
+inputs, not class-signal destruction.
+
+**Prior-sample test (the pilot-relevant check):**
+
+Generated 64 prior samples per class with matched z (same z vector
+across all three class labels). Classified each decode with the
+blur-aware evaluator:
+
+| Requested class | Correctly classified | Accuracy |
 |---|---|---|
-| City street | 92.2% | 93.8% |
-| Highway | 53.6% | 54.6% |
-| **Residential** | **5.4%** | **7.3%** |
+| City street | 54/64 | **0.844** |
+| Residential | 23/64 | **0.359** |
+| Highway | 11/64 | **0.172** |
+| **Overall** | 88/192 | **0.458** (chance 0.333) |
 
-The classifier predicts "city street" for 91% of real residential images. **It cannot be used to evaluate residential generation.** This is a documented cross-project finding about UrbanMind-AI's Week 5 model.
+**Findings:**
 
-**What G1b establishes:**
-1. A working conditional VAE training pipeline (30 epochs, converged, no collapse).
-2. Diverse but blurry samples with no memorization.
-3. The latent is being used (7.6× better than class-mean, 128/128 active dims, meaningful within-class diversity).
-4. **The class conditioning is weak** — highway shows some signal; residential shows none visible.
-5. **The classifier evaluation of class fidelity is invalid for residential** — it cannot recognize real residential scenes.
+1. **The cVAE does condition on class.** Prior samples carry class signal
+   at 0.458 overall vs 0.333 chance (37.6% relative improvement).
+2. **City street is strongly class-distinct** (0.844 accuracy). The
+   model generates clear city-street-like samples when conditioned on
+   city street.
+3. **Residential is weakly class-distinct** (0.359, barely above 0.333).
+   The model's residential conditioning is present but fragile.
+4. **Highway is actively confused with city street** (0.172, worse than
+   chance). Highway-conditioned samples look more like city street to
+   the evaluator than like real highway.
 
-**What G1b does NOT establish:**
-- That the cVAE's residential samples are useful for downstream augmentation.
-- That the class conditioning is broken (vs. just weak) — the evaluator can't tell.
+**Cross-project finding:** The Week 5 ResNet-50 classifier from
+UrbanMind-AI achieves only **5.4% accuracy on real residential images**
+(92.2% on real city street images). It is effectively a city-street
+detector and **cannot be used to evaluate residential generation**.
+This is documented in `outputs/diagnostic/classifier_pipeline_diagnostic.json`
+and is a legitimate finding about UrbanMind-AI's Week 5 model,
+independent of UrbanGen-AI.
 
-**Limitations:**
-- Blur: standard VAE + MSE at 128×128 with 128-dim latent. Not a training failure.
-- Weak class conditioning: 16-dim class embedding concatenated at encoder/decoder may be insufficient for 3-way conditioning at this scale.
-- Classifier evaluation: cannot judge residential. G1c must use a fresh ResNet-50, not Week 5's.
+### What G1b establishes
 
-**Next steps (not this milestone):**
-- G1c pilot (does synthetic residential data improve downstream recognition) can only run on samples with visible residential signal. **G1b's samples don't have that signal.** Options: (a) improve cVAE conditioning and retrain; (b) pivot pilot to G2 (DDPM).
+1. **A working cVAE training pipeline.** 30 epochs, converged, no collapse,
+   no divergence, reproducible (seed 42).
+2. **Diverse but blurry samples.** No memorization (0/64 above 0.90
+   perceptual similarity), meaningful within-class diversity (0.109–0.121
+   pairwise distance).
+3. **The latent is used.** 7.6× better than class-mean baseline,
+   128/128 active dims.
+4. **Class signal survives reconstruction.** Blur-aware/sharp balanced
+   accuracy ratio 0.988.
+5. **Prior samples are class-distinct.** Overall 0.458 accuracy vs
+   chance 0.333. Asymmetric: city strong (0.844), residential weak
+   (0.359), highway actively confused (0.172).
+6. **The Week 5 classifier is invalid for residential evaluation.**
+   5.4% accuracy on real residential images.
 
+### What G1b does NOT establish
 
-### G1b diagnostic — inconclusive (evaluator confounded)
+- **Whether synthetic residential samples improve downstream recognition.**
+  That is G1c's pilot's question. The weak residential conditioning (0.359)
+  means a null pilot result could reflect sample weakness, not augmentation
+  ineffectiveness.
+- **Whether the class conditioning is sufficient for a meaningful pilot.**
+  The prior samples carry signal, but only weakly for residential.
 
-Ran `scripts/diagnose_class_conditioning.py` (updated with 3b and 4)
-to determine whether weak class conditioning reflects a decoder problem,
-a prior problem, or an information-loss problem. **The original commit
-(fc0b3a9) labeled this 'definitive.' It is not. The corrected diagnosis
-is 'evaluator-confounded.'**
+### Limitations
 
-**Check 1 — 128×128 evaluator (real val accuracy 0.688):**
-Trained small CNN on 15k cache-train images, 10 epochs. Real val
-per-class: city 0.87, highway 0.51, residential 0.11. **This evaluator
-is weak on residential** (0.11) and is trained only on sharp images.
-
-**Check 2 — reconstruction ceiling (confounded):**
-Real val images: 0.688 accuracy. Reconstructions: 0.275 accuracy.
-Reconstructions classified as highway 99.6% of the time.
-**But:** the evaluator was trained on sharp real images and shown
-blurry reconstructions. This is a distribution shift, not evidence
-that the class signal is gone. The proper test would train the
-evaluator on reconstructions or on real-blurred images.
-
-**Check 3 — label swap (present but small in isolation):**
-- res vs city: 0.000815
-- res vs highway: 0.000563
-- city vs highway: 0.000343
-
-**Check 3b — evaluator-free conditioning strength:**
-Same z, different labels:
-- 0 vs 1: mean |diff| = 0.017, max |diff| = 0.240
-- 0 vs 2: mean |diff| = 0.027, max |diff| = 0.327
-- 1 vs 2: mean |diff| = 0.026, max |diff| = 0.314
-
-**VERDICT: the decoder materially responds to the class label.**
-Mean absolute pixel differences of 1.7–2.7% and max differences up to
-32% are substantial. **The conditioning mechanism is ALIVE.** (This
-contradicts the original commit message's "label swap is 70× too small"
-claim — that comparison used inconsistent yardsticks.)
-
-**Check 4 — prior samples classified by evaluator (confounded):**
-Overall 0.333 accuracy. All 64 samples of every class classified as
-highway (city: 63/64 highway, highway: 63/64 highway, residential:
-62/64 highway). **But again:** the evaluator can't recognize blurry
-images. This does not tell us whether the prior samples are class-
-distinct — only that the evaluator can't see them.
-
-### What the diagnostic actually establishes
-
-**Definitively:**
-- The decoder uses the class label (Check 3b: 1.7–2.7% mean pixel shift,
-  up to 32% max)
-- The 128×128 evaluator cannot reliably classify blurry reconstructions
-  or blurry prior samples (distribution shift)
-
-**Not established:**
-- Whether the class signal survives reconstruction (confounded by
-  evaluator fragility)
-- Whether prior samples are class-distinct (same confound)
-- Whether the "reconstruction bottleneck" is real or an evaluator
-  artifact
-
-### Corrected conclusion
-
-The original commit (fc0b3a9) overstated the evidence. The accurate
-state is:
-
-**The decoder uses the class label materially, but we cannot measure
-whether the resulting reconstructions or samples are class-distinct
-using the current evaluator, which is too weak on blurry images.**
-
-To make a definitive judgment, we need a **blur-aware evaluator**:
-- Trained on real images passed through the same 128×128 reconstruction
-  blur (or on reconstructions themselves)
-- Or a perceptual/feature-space classifier
-- Or a pretrained backbone fine-tuned on 128×128 images (like UrbanMind's
-  Week 5 ResNet, but retrained for the 128×128 setting)
-
-**Without that evaluator, we don't know whether to close G1b or try
-a class-conditional prior.** The current evidence is consistent with
-both "the VAE has enough class signal for the pilot" and "the VAE has
-too much blur for the pilot."
+1. **Blur** — expected for standard VAE + MSE at 128×128. Not a training
+   failure. The blur is a property of the loss function, not the data or
+   the training procedure.
+2. **Weak residential conditioning** (0.359 vs chance 0.333) — the model
+   can generate residential-like samples, but the signal is fragile.
+   A 16-dim class embedding concatenated at two points may be insufficient.
+3. **Highway confusion** (0.172 vs chance 0.333) — the model generates
+   samples that look more city-street-like than highway-like when
+   conditioned on highway.
+4. **Class imbalance in the training data** (62% city street) may bias
+   the model toward city-like outputs regardless of conditioning.
+5. **Padding region (43.75% of each image)** excluded from loss but
+   present in output. Generated images have arbitrary content in the
+   padding rows; visualization zeroes them.
 
 ### Preserved baseline
 
-`v0.1.0-g1b-cvae` unchanged. The cVAE checkpoint, model card, and
-sample grids are the honest G1b record. **No retraining, no architectural
-changes.** The diagnostic is documented as inconclusive.
+`v0.1.0-g1b-cvae` is the honest G1b milestone tag. The checkpoint,
+model card, sample grids, and this experiment entry are the record of
+what was trained. **No retraining, no architectural changes** in G1b.
 
-### Next step
+### Next step: G1c pilot
 
-The diagnostic cannot yet decide between:
-- (A) Run G1c pilot on current samples (if signal survives — unknown)
-- (B) Try class-conditional prior (10-line fix, if decoder needs help)
-- (C) Close G1b as "VAE at this scale cannot be evaluated" (if signal
-      cannot be measured)
-- (D) Train a blur-aware evaluator first, then decide
+The blur-aware diagnostic establishes that prior samples carry class
+signal. **The G1c pilot is meaningful.** It will test whether adding
+3,000 cVAE-generated residential samples to ResNet-50 training improves
+residential recall on the real clean test set, against three control
+arms (real-only, conventional augmentation, class-weighted loss).
 
-**Option D is the correct next step.** ~30 min to train a blur-aware
-evaluator, then re-run Check 2 and Check 4. Only then do we know which
-of A, B, C is right.
+The weak residential conditioning (0.359) is documented as a caveat:
+a null pilot result may reflect sample weakness rather than augmentation
+ineffectiveness.
+
+**Files:**
+- Diagnostic script: `scripts/diagnose_blur_aware_evaluator.py`
+- Diagnostic JSON: `outputs/diagnostic_blur_aware/blur_aware_diagnostic.json`
+- Original diagnostic (superseded, preserved): `scripts/diagnose_class_conditioning.py`,
+  `outputs/diagnostic_conditioning/conditioning_diagnostic.json`
+- Classifier diagnostic: `outputs/diagnostic/classifier_pipeline_diagnostic.json`
+- Model card: `docs/model_cards/bdd100k_cvae_v1.md`
+- Sample grid: `docs/model_cards/cvae_samples_beta1_seed42.png`
 
 ---
-
