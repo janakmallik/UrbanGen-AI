@@ -284,13 +284,24 @@ def _generate_samples(
 
 
 @torch.inference_mode()
-def check_prior_samples(
-    evaluator: SmallEvaluator, cvae: ConditionalVAE, device, n_per_class: int = 64
-) -> dict:
+def check_prior_samples(evaluator, cvae, device, n_per_class: int = 64):
     """Generate prior samples per class, classify them with evaluator."""
-    samples, labels = _generate_samples(cvae, n_per_class, device)
-    samples = samples.to(device)
-    labels = labels.to(device)
+    cpu_state = torch.get_rng_state()
+    cuda_state = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+    try:
+        torch.manual_seed(SEED)
+        all_samples, all_labels = [], []
+        for c in range(3):
+            labels = torch.full((n_per_class,), c, dtype=torch.long, device=device)
+            imgs = cvae.sample(n_per_class, labels, device=device)
+            all_samples.append(imgs.cpu())
+            all_labels.append(labels.cpu())
+    finally:
+        torch.set_rng_state(cpu_state)
+        if cuda_state is not None:
+            torch.cuda.set_rng_state_all(cuda_state)
+    samples = torch.cat(all_samples, 0).to(device)
+    labels = torch.cat(all_labels, 0).to(device)
 
     preds = evaluator(samples).argmax(dim=1)
     overall = float((preds == labels).float().mean())
