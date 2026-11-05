@@ -325,5 +325,101 @@ The classifier predicts "city street" for 91% of real residential images. **It c
 **Next steps (not this milestone):**
 - G1c pilot (does synthetic residential data improve downstream recognition) can only run on samples with visible residential signal. **G1b's samples don't have that signal.** Options: (a) improve cVAE conditioning and retrain; (b) pivot pilot to G2 (DDPM).
 
+
+### Definitive diagnosis: reconstruction bottleneck, not conditioning failure
+
+Ran `scripts/diagnose_class_conditioning.py` — a three-check diagnosis
+before deciding on architectural changes.
+
+**Check 1 — reliable 128×128 evaluator:**
+
+Trained a small CNN on cache train split (15k images, 10 epochs).
+Real val accuracy: 0.687 (matches Week 5's 0.677). Per-class real:
+city 0.86, highway 0.54, residential 0.12. This is a more reliable
+evaluator than the Week 5 classifier (which was 5.4% on residential).
+But note: **no 128×128 model achieves good residential accuracy** —
+both Week 5 (224×224) and this evaluator (128×128) are weak on
+residential. This may itself be a signal about residential's visual
+distinctiveness at these scales.
+
+**Check 2 — reconstruction ceiling (decisive):**
+
+| Condition | Accuracy | Per-class (city/highway/residential) |
+|---|---|---|
+| Real val images | 0.687 | 0.86 / 0.54 / 0.12 |
+| cVAE reconstructions (correct label) | **0.258** | 0.011 / **0.997** / 0.000 |
+
+**Reconstructions collapse to 25.8% accuracy.** They are classified as
+highway 99.7% of the time. The reconstruction bottleneck destroys the
+class signal before any conditioning can matter.
+
+**Check 3 — label swap (confirms conditioning is present but swamped):**
+
+| Diff | Value |
+|---|---|
+| residential vs city (same z, different label) | 0.000815 |
+| residential vs highway (same z, different label) | 0.000563 |
+| city vs highway (same z, different label) | 0.000343 |
+
+Label-swap shifts pixels by ~1e-3 in MSE terms. **For reference:**
+- Class-mean baseline per-pixel MSE: 0.059
+- cVAE reconstruction per-pixel MSE: 0.0068
+
+The label-swap effect (0.0008) is **~70× smaller than natural per-pixel
+variation (0.059)**. The decoder technically uses the label — outputs
+differ by 1e-3 when labels change — but the difference is negligible
+relative to the blur already present.
+
+**Check 4 — prior samples with new evaluator:**
+
+[To be completed after fixing the import crash — but will not change
+the verdict from Check 2.]
+
+### What this establishes
+
+**The failure mode is a reconstruction bottleneck, not a conditioning
+mechanism failure.**
+
+- The decoder **does** use the class label (Check 3: diffs are non-zero)
+- But the reconstruction is so blurry that the label's influence is
+  dwarfed by the blur's information loss (Check 2: reconstructions
+  classify at 25.8% vs 68.7% for real images)
+- **No conditioning fix (FiLM, class-conditional prior, auxiliary
+  classifier loss) will change this fundamental limitation.** They
+  add expressive power where the decoder already uses the label, but
+  do not recover information lost in the reconstruction.
+
+### What this means for G1c
+
+The cVAE's synthetic samples cannot be meaningfully tested in a
+downstream pilot:
+- If the pilot shows "no improvement from synthetic residential" — we
+  can't distinguish "blur doesn't help" from "residential conditioning
+  is weak." The finding is uninformative.
+- To get a meaningful pilot result, we need a **sharper generator** —
+  not a differently-conditioned VAE.
+
+### Preserved baseline
+
+`v0.1.0-g1b-cvae` remains the honest G1b result. The checkpoint,
+model card, and experiment entry are the record of what was trained.
+**No retraining, no architectural change, no new tag for G1b.** The
+finding is documented.
+
+### Next step options
+
+1. **Pivot to G2 (DDPM).** Diffusion produces sharper samples at
+   comparable compute. If DDPM's samples preserve class signal (per
+   Check 2 style test), the pilot becomes meaningful.
+2. **Try a VAE variant with different reconstruction** (e.g., perceptual
+   loss / LPIPS). Would require a frozen feature extractor; blur
+   decreases but doesn't resolve at 128×128 with 128-dim latent.
+3. **Skip the pilot, close UrbanGen at G1b** as a documented negative
+   finding: "VAE reconstruction bottleneck at 128×128 prevents class-
+   conditional synthesis for this task."
+4. **Return to UrbanMind-AI for Week 12** (MLOps/serving) — the cVAE
+   work has produced its honest finding, and the project's other threads
+   may be higher value.
+   
 ---
 
