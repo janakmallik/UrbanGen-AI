@@ -272,5 +272,58 @@ memorization analysis, and a convergence decision (30 epochs sufficient?).
   is still part of the generated output. The model may or may not learn
   to output near-black there; this will be documented, not corrected.
 
+
+### G1b results — cVAE trained, samples documented, class conditioning evaluated
+
+**Training:** 30 epochs, β=1, seed 42. Converged by epoch 25 (best val loss 273.9).
+- Train recon_mse: 0.0152 → 0.0078 (49% reduction)
+- Train KL: 76.2 → 87.8 (healthy plateau, no collapse)
+- Val recon_mse: 0.0094 → 0.0068
+- 7.6× better than class-mean baseline (0.0068 vs 0.0592)
+- Active dims: 128/128 at all epochs
+- Scaler stabilized after epoch 1 (fp16 AMP)
+
+**Samples:** Visibly blurry — expected for standard VAE + MSE at 128×128 with a 128-dim latent. Sample grids at epochs 5/10/15/20/25/30 in `outputs/cvae_beta1_seed42/samples/`. Final grid in `docs/model_cards/cvae_samples_beta1_seed42.png`.
+
+**Memorization analysis:**
+- MSE to nearest real residential: mean 0.026, median 0.027 (baseline class-mean: 0.059 → VAE is 2.3× closer but not near-duplicate)
+- Perceptual nearest-neighbor (ResNet-50 features): mean cosine 0.624, **0/64 above 0.90** — no evidence of memorization
+
+**Diversity:** Pairwise cosine distance within class: city 0.109, highway 0.113, residential 0.121. Samples within a class are diverse (not identical).
+
+**Class conditioning — WEAK:**
+- Visual inspection of `samples_16_per_class.png`: rows barely distinguishable. Highway shows faint horizontal band structure. Residential shows no visible greenery or narrower-road signal.
+- Synthetic classifier accuracy: city 32.8%, highway 62.5%, residential 0.0%.
+- **But:** the evaluation classifier (Week 5 ResNet-50) achieves only **5.4% accuracy on real residential images** (diagnostic: `outputs/diagnostic/classifier_pipeline_diagnostic.json`). The 0% synthetic result is measuring the classifier's residential blindness, not the cVAE's conditioning.
+
+**Critical diagnostic finding:** The Week 5 ResNet-50 is effectively a city-street detector:
+
+| Class | Real val accuracy (JPEG) | Real val accuracy (cache) |
+|---|---|---|
+| City street | 92.2% | 93.8% |
+| Highway | 53.6% | 54.6% |
+| **Residential** | **5.4%** | **7.3%** |
+
+The classifier predicts "city street" for 91% of real residential images. **It cannot be used to evaluate residential generation.** This is a documented cross-project finding about UrbanMind-AI's Week 5 model.
+
+**What G1b establishes:**
+1. A working conditional VAE training pipeline (30 epochs, converged, no collapse).
+2. Diverse but blurry samples with no memorization.
+3. The latent is being used (7.6× better than class-mean, 128/128 active dims, meaningful within-class diversity).
+4. **The class conditioning is weak** — highway shows some signal; residential shows none visible.
+5. **The classifier evaluation of class fidelity is invalid for residential** — it cannot recognize real residential scenes.
+
+**What G1b does NOT establish:**
+- That the cVAE's residential samples are useful for downstream augmentation.
+- That the class conditioning is broken (vs. just weak) — the evaluator can't tell.
+
+**Limitations:**
+- Blur: standard VAE + MSE at 128×128 with 128-dim latent. Not a training failure.
+- Weak class conditioning: 16-dim class embedding concatenated at encoder/decoder may be insufficient for 3-way conditioning at this scale.
+- Classifier evaluation: cannot judge residential. G1c must use a fresh ResNet-50, not Week 5's.
+
+**Next steps (not this milestone):**
+- G1c pilot (does synthetic residential data improve downstream recognition) can only run on samples with visible residential signal. **G1b's samples don't have that signal.** Options: (a) improve cVAE conditioning and retrain; (b) pivot pilot to G2 (DDPM).
+
 ---
 
