@@ -190,4 +190,87 @@ The "compute-only epoch" column excludes DataLoader overhead (image
 decode, augmentation, CPU→GPU transfer). Real epoch time will be
 measured during the G1b training run and reported in the G1b entry.
 
+
+### Pre-run amendment — loss reduction convention (2026-11-05)
+
+**Change:** The reconstruction term in the training loss is a **sum of
+squared error over content pixels** (per sample, averaged over batch),
+not a per-pixel mean. KL remains a sum over latent dims (per sample,
+averaged over batch). The frozen objective is:
+
+```
+recon_sse = Σ_{c,h,w ∈ content} (x - x̂)², mean over batch
+kl        = Σ_{j=1..128} KL_j, mean over batch
+total     = recon_sse + β·kl, β = 1.0
+```
+
+**Reason:** Under the previous convention (per-pixel MSE + KL sum), the
+reconstruction term was ~0.05 and the KL term was ~tens of nats.
+Optimizing that total drives the optimizer to zero out KL (posterior
+collapse) and accept a class-average blurry output — total loss ~0.05
+versus ~30 with a healthy latent. The ELBO in its correct form sums
+squared error over the sample's data dimensions, which places recon in
+the thousands and makes β = 1.0 a meaningful trade-off.
+
+**Diagnostic additions:**
+
+- `recon_mse` (per-pixel) is still logged for interpretability.
+- `active_dims` = number of latent dimensions with std(μ) > 0.01 across
+  the validation set. Reported per epoch. Under 100/128 at any point
+  would be a posterior-collapse warning.
+- `train_one_epoch` raises `RuntimeError` on non-finite loss.
+- Gradient clipping at norm 1.0 is applied before optimizer step.
+- `logvar` is clamped to [-10, 10] inside the model's `encode()`.
+
+**Discipline:** No training has been run under either convention. The
+amendment is recorded pre-run rather than as a post-hoc fix.
+
 ---
+
+## 2026-11-05 — G1b: cVAE training run (β=1, seed 42)
+
+Hypothesis (same as G1 scoping): see the G1 scoping entry above.
+
+### Setup (frozen — see G1 scoping)
+
+- Model: ConditionalVAE(128, latent_dim=128, channels=(32,64,128,256))
+- Loss reduction (see pre-run amendment above):
+  - `recon_sse = sum over (channels × content pixels) per sample, mean over batch`
+  - `kl        = sum over latent dims per sample, mean over batch`
+  - `total     = recon_sse + β·kl`, β = 1.0
+  - Mask = 1 on rows 28:100; 0 elsewhere
+  - `recon_mse` (per-pixel) logged for interpretability only
+- Optimizer: AdamW(lr=1e-3, wd=1e-4), CosineAnnealingLR over 30 epochs
+- Batch size 32, DataLoader num_workers=0, shuffle=True (train only)
+- AMP: FP16 autocast for forward/backward; KL divergence computed in FP32
+- Seeds: torch 42, numpy 42, cuda 42
+- Validation: shuffle=False, deterministic (μ not sampled z), reports recon/kl/total
+- Checkpointing: best by val total, plus last checkpoint each epoch
+- Sample grid every 5 epochs (16 samples × 3 classes) → `outputs/cvae_beta1_seed42/samples/`
+- Early stopping: **disabled** for this first run — full 30 epochs unless
+  NaN loss or CUDA failure. Convergence compared at epochs 15 and 30.
+- Runtime estimate (compute-only from G1 profiling): ~18 min of GPU step
+  time. Actual wall time (with DataLoader + logging) to be measured.
+
+### Result
+
+**PENDING — training run not yet executed.**
+
+This entry will be filled in after `scripts/train_cvae.py --epochs 30`
+completes. Expected content: per-epoch loss curves, best val loss and
+epoch, sample grids at epochs 5/10/15/20/25/30, nearest-neighbor
+memorization analysis, and a convergence decision (30 epochs sufficient?).
+
+### Limitations / non-claims
+
+- **A successfully trained cVAE is not evidence that synthetic data
+  improves downstream recognition.** That is G1c's pilot's question.
+- Sample grids from a first cVAE run at 128×128 are expected to be
+  blurry; this is a property of VAE reconstruction quality at this
+  scale, not a failure.
+- The padding region (43.75% of each image) is excluded from loss but
+  is still part of the generated output. The model may or may not learn
+  to output near-black there; this will be documented, not corrected.
+
+---
+

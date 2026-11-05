@@ -83,7 +83,13 @@ class ConditionalVAE(nn.Module):
         flat = torch.flatten(h, 1)
         c_emb = self.class_embed(class_ids)
         flat_c = torch.cat([flat, c_emb], dim=1)
-        return self.fc_mu(flat_c), self.fc_logvar(flat_c)
+        mu = self.fc_mu(flat_c)
+        logvar = self.fc_logvar(flat_c)
+        # Clamp logvar to prevent exp() overflow and stabilize early training.
+        # Range [-10, 10] allows std in [e^-5, e^5] which is ample for this
+        # task; values outside would indicate a broken forward pass.
+        logvar = torch.clamp(logvar, min=-10.0, max=10.0)
+        return mu, logvar
 
     def reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
         std = torch.exp(0.5 * logvar)
