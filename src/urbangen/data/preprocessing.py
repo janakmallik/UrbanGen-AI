@@ -123,7 +123,7 @@ def _preprocess_tensor_for_week5(x: torch.Tensor) -> torch.Tensor:
     Handles (C, H, W) or (B, C, H, W). Assumes values in [0, 1].
     Applies: Resize shorter side to 256, center-crop 224, ImageNet normalize.
     """
-    import torch.nn.functional as F
+    import torch.nn.functional as F  # noqa: N812
 
     batched = False
     if x.dim() == 3:
