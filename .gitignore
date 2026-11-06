@@ -8,6 +8,7 @@ venv/
 
 # extras
 CheakPoint.md
+CurrentPlan.md
 
 # Testing / linting
 .pytest_cache/
@@ -44,3 +45,5 @@ mlflow.db
 # OS
 Thumbs.db
 .DS_Store
+
+tmp/
