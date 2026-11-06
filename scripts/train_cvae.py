@@ -214,7 +214,6 @@ def train_one_epoch(
     total_recon_mse = 0.0
     total_kl = 0.0
     total_n = 0
-    skipped_steps = 0
 
     it = itertools.islice(loader, max_batches) if max_batches else loader
     total_iter = max_batches or len(loader)
@@ -244,12 +243,8 @@ def train_one_epoch(
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP)
-
-        scale_before = scaler.get_scale()
         scaler.step(optimizer)
         scaler.update()
-        if scaler.get_scale() < scale_before:
-            skipped_steps += 1
 
         n = x.size(0)
         total_recon_sse += recon_sse.item() * n
@@ -267,7 +262,6 @@ def train_one_epoch(
         "recon_mse": total_recon_mse / total_n,
         "kl": total_kl / total_n,
         "total": (total_recon_sse / total_n) + BETA * (total_kl / total_n),
-        "skipped_steps": skipped_steps,
     }
 
 
@@ -375,13 +369,6 @@ def main() -> int:
                 max_batches=max_batches,
                 epoch_label=f"{epoch + 1}/{epochs_to_run}",
             )
-        if train_metrics.get("skipped_steps", 0) > 0:
-            print(
-                f"  WARNING: {train_metrics['skipped_steps']} batches had "
-                f"skipped optimizer steps (GradScaler found inf/nan). "
-                f"Current scaler scale: {scaler.get_scale():.0f}"
-            )
-
             val_metrics = validate(model, val_loader, device)
             active_dims, total_dims = compute_active_dims(model, val_loader, device)
             scheduler.step()
