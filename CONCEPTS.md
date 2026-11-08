@@ -2,7 +2,7 @@
 
 **Cosine annealing** is a learning-rate scheduling technique that gradually decreases the learning rate following a cosine-shaped curve during training. Instead of keeping the learning rate constant, or reducing it abruptly at fixed intervals, it starts relatively high and smoothly decreases toward a minimum value. A higher learning rate helps the model make larger parameter updates early in training, while a lower learning rate helps it make smaller, more precise adjustments later. In deep learning, cosine annealing can help training converge more smoothly and reduce the need for manually designed learning-rate decay steps. Some implementations also use warm restarts, where the learning rate periodically rises again before decreasing.
 
-**Mixed precision training** is a technique that uses different numerical precisions during neural-network training instead of performing every operation in standard 32-bit floating point (FP32). It commonly uses 16-bit floating point (FP16 or BF16) for suitable operations while retaining FP32 for operations that need greater numerical stability, such as certain loss calculations or parameter updates. This reduces memory consumption and can accelerate training, particularly on GPUs with specialized hardware for lower-precision computation. For example, on your RTX 4050, mixed precision can help fit larger batches or models into the available VRAM and potentially improve training speed. However, FP16 can introduce numerical underflow or overflow, so loss scaling may be used; BF16 generally has a wider numerical range.
+**Mixed precision training** is a technique that uses different numerical precisions during neural-network training instead of performing every operation in standard 32-bit floating point (FP32). It commonly uses 16-bit floating point (FP16 or BF16) for suitable operations while retaining FP32 for operations that need greater numerical stability, such as certain loss calculations or parameter updates. This reduces memory consumption and can accelerate training, particularly on GPUs with specialized hardware for lower-precision computation. For example, on your GPU, mixed precision can help fit larger batches or models into the available VRAM and potentially improve training speed. However, FP16 can introduce numerical underflow or overflow, so loss scaling may be used; BF16 generally has a wider numerical range.
 
 **Reconstruction loss (MSE):** Measures how different the VAE's reconstructed output is from the original input. MSE (Mean Squared Error) calculates the average squared difference between corresponding pixel values. A lower MSE means the reconstruction is closer to the original image. During training, it encourages the decoder to generate images that preserve the input's visual information.
 
@@ -391,6 +391,52 @@ That is why sampling is not a minor implementation detail. It is part of the exp
 **Condition fidelity** means how accurately a generated sample follows the specific condition or instruction given to the generative model. In our conditional models, the condition is the requested scene class: city street, highway, or residential. For example, if we provide the residential label, the model should generate an image that genuinely represents a residential scene. If it generates a highway image instead, the image might look realistic and therefore have good visual fidelity, but it has poor condition fidelity. Conversely, an image might clearly represent a residential street but contain distorted buildings and unrealistic roads: it has good condition fidelity but poor visual fidelity.
 
 **The distinction for our experiments:** Fidelity asks, "Does this generated image look like a plausible real urban scene?" Condition fidelity asks, "Does it actually represent the class we requested?" We need both because our ultimate goal is not merely to generate realistic-looking images; it is to generate realistic, diverse, correctly labeled synthetic images that improve downstream residential-scene recognition.
+
+
+
+# AMP = Automatic Mixed Precision.
+
+It is a PyTorch feature that allows a neural network to perform certain calculations using different numerical precisions instead of using FP32 (32-bit floating point) for everything.
+
+The two main precisions are:
+
+- FP32 (32-bit): Higher numerical precision; uses 4 bytes per number.
+- FP16 (16-bit): Lower numerical precision; uses 2 bytes per number.
+
+With AMP, PyTorch automatically chooses which operations can safely use FP16 and which should retain higher precision.
+
+
+## 2. What did I mean by "analogous to the actual cVAE trainer"?
+
+I was referring to this distinction:
+
+Profiling script: A diagnostic program that estimates GPU memory consumption and computational speed.
+
+Actual cVAE trainer: The project script that will genuinely train your Conditional VAE using BDD100K images.
+
+They may execute similar model operations, but they serve different purposes.
+
+For example:
+
+| Component           | GPU profiler              | Actual trainer      |
+| ------------------- | ------------------------- | ------------------- |
+| Input               | Random synthetic tensors  | Real BDD100K images |
+| Encoder             | Yes                       | Yes                 |
+| Latent sampling     | Yes                       | Yes                 |
+| Decoder             | Yes                       | Yes                 |
+| Backpropagation     | Yes                       | Yes                 |
+| Optimizer update    | Yes                       | Yes                 |
+| DataLoader          | No                        | Yes                 |
+| Image preprocessing | No                        | Yes                 |
+| AMP                 | FP32 in your reported run | Planned AMP         |
+| MLflow              | No                        | Yes                 |
+| Checkpointing       | No                        | Yes                 |
+
+So when I said "analogous to the actual cVAE trainer", I meant the profiler should approximate the actual model's computational workload closely enough to inform architecture decisions.
+
+I wasn't saying that your profiling script was the actual trainer or that your FP32 results were obtained using AMP.
+
+we use FP32 profiling as the reference measurement, then use AMP for the actual cVAE training, with the KL calculation kept in FP32 for numerical stability.
 
 ---
 
