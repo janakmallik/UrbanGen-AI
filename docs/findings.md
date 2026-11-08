@@ -56,7 +56,7 @@ A working Image-to-Video generation pipeline was built using Wan 2.2 FastWan 5B 
 **Results:**
 - Successfully generated 720p, 9-second videos in ~1 minute each.
 - The pipeline preserves the ``mmgp`` memory manager (block-swapping, INT8 quantization) which is essential for running a 5B model on 6 GB VRAM.
-- 5 showcase videos are available in ``docs/assets/generated_examples/``.
+- 2 showcase videos are available in ``docs/assets/generated_examples/``.
 - Full environment and reproduction commands are in ``docs/reproducibility.md``.
 
 **Limitations:**
