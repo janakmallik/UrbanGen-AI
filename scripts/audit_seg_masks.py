@@ -1,5 +1,4 @@
 import json
-from collections import Counter
 from pathlib import Path
 
 DATA_ROOT = Path(r"C:\Users\Janak Mallik\ml-data\bdd100k")
@@ -31,7 +30,7 @@ night_res_stems = {Path(n).stem for n in night_res}
 matched_images = night_res_stems & seg_image_stems
 matched_labels = night_res_stems & seg_label_stems
 
-print(f"\n--- Pairing ---")
+print("\n--- Pairing ---")
 print(f"Night residential images WITH segmentation image: {len(matched_images):,}")
 print(f"Night residential images WITH segmentation label: {len(matched_labels):,}")
 

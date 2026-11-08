@@ -29,13 +29,14 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from sklearn.metrics import (
-    confusion_matrix,
     f1_score,
-    precision_recall_fscore_support,
     recall_score,
 )
 from torch.utils.data import DataLoader, Dataset
 from torchvision import models, transforms
+
+from urbangen.config import data_root, urbanmind_root
+from urbangen.data.preprocessing import WEEK5_CLASS_TO_ID, week5_eval_transform
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT / "src"))
@@ -44,8 +45,6 @@ os.environ.setdefault("URBANMIND_REPO", str(_REPO_ROOT.parent / "UrbanMind-AI"))
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from urbangen.config import data_root, urbanmind_root
-from urbangen.data.preprocessing import WEEK5_CLASS_TO_ID, week5_eval_transform
 
 # Paths
 _URBANMIND = urbanmind_root()
@@ -358,21 +357,21 @@ def main() -> int:
     # Paired bootstrap for D vs A, D vs B, D vs C
     if "D" in arms and len(args.seeds) >= 1:
         # Use the first seed's predictions for paired bootstrap
-        preds_A = np.array(all_results["A"][0]["night_residential_predictions"])
+        preds_a = np.array(all_results["A"][0]["night_residential_predictions"])
         for other in ["B", "C"]:
             if other in arms:
-                preds_O = np.array(all_results[other][0]["night_residential_predictions"])
-                ci = paired_bootstrap_ci(preds_A, preds_O)
+                preds_o = np.array(all_results[other][0]["night_residential_predictions"])
+                ci = paired_bootstrap_ci(preds_a, preds_o)
                 print(
                     f"\n  Bootstrap {other} - A: Δ={ci['mean']:+.4f}  "
                     f"CI [{ci['ci_low']:+.4f}, {ci['ci_high']:+.4f}]  "
                     f"{'CI excludes zero' if ci['ci_low'] > 0 or ci['ci_high'] < 0 else 'CI includes zero'}"
                 )
 
-        preds_D = np.array(all_results["D"][0]["night_residential_predictions"])
+        preds_d = np.array(all_results["D"][0]["night_residential_predictions"])
         for other in ["A", "B", "C"]:
-            preds_O = np.array(all_results[other][0]["night_residential_predictions"])
-            ci = paired_bootstrap_ci(preds_O, preds_D)
+            preds_o = np.array(all_results[other][0]["night_residential_predictions"])
+            ci = paired_bootstrap_ci(preds_o, preds_d)
             print(
                 f"  Bootstrap D - {other}: Δ={ci['mean']:+.4f}  "
                 f"CI [{ci['ci_low']:+.4f}, {ci['ci_high']:+.4f}]  "
