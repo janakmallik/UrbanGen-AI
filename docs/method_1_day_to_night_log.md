@@ -66,6 +66,25 @@ The detailed prompts used in later experiments exceeded the CLIP text encoder's 
 
 The generated images are not suitable for inclusion in the project's validated synthetic training dataset (Arm D). If used, they would train the classifier on hallucinated structures, worsening the model's performance.
 
+## 5.1 Visual Comparisons
+
+Below are side-by-side comparisons from the final Method 1 run (SD 1.5 Img2Img at 512x288, strength 0.4).
+
+**Comparison 1:**
+![Compare 1](../assets/method_results/compare_01.jpg)
+
+**Comparison 2:**
+![Compare 2](../assets/method_results/compare_02.jpg)
+
+**Comparison 3:**
+![Compare 3](../assets/method_results/compare_03.jpg)
+
+**Comparison 4:**
+![Compare 4](../assets/method_results/compare_04.jpg)
+
+**Comparison 5:**
+![Compare 5](../assets/method_results/compare_05.jpg)
+
 ## 6. Conclusion
 
 The standard Stable Diffusion 1.5 Img2Img approach is fundamentally incapable of solving this task. Parameter adjustments alone cannot resolve the conflict between nighttime transformation and structural preservation. 
