@@ -687,3 +687,17 @@ permanent test.
 
 ---
 
+## 2026-11-08 — Generative Video Showcase (Wan 2.2 FastWan via WanGP)
+
+**Status:** Complete.
+
+**Objective:** Generate synthetic nighttime urban video to demonstrate feasibility of generative augmentation on a 6 GB GPU.
+
+**Method:** Used WanGP v19.21 with FastWan2.2-TI2V-5B (3-step distilled model). Discovered the correct integration path via ``from shared.api import init`` after multiple failed attempts with standard ``diffusers`` and Gradio API wrappers.
+
+**Results:**
+- Successfully generated 720p, 9-second videos in ~1 minute each.
+- Generated 5 showcase videos for GitHub.
+- Documented the full pipeline in ``docs/reproducibility.md``.
+
+**Learning:** WanGP is not a standard Gradio frontend. Its custom ``mmgp`` memory manager (block-swapping, INT8 quantization) is essential for running large models on low VRAM. Attempting to reimplement this with ``diffusers`` failed.
