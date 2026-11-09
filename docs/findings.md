@@ -123,3 +123,27 @@ Plus four supporting diagnostics:
 4. **Residential redefinition.** A binary "urban scene (city+residential) vs highway" task might be well-posed where the three-class task is not. (UrbanMind-AI scope.)
 5. **Object-level features.** Week 9a's segmentation + detection features improved residential recall from 0.41 to 0.67. (UrbanMind-AI scope.)
 6. **DDPM at higher resolution.** 128×128 is a hard limit for a VAE. Diffusion at higher resolution may produce class-faithful samples. (Future project.)
+
+---
+
+## Visual evidence
+
+### cVAE failure proof
+8 synthetics (top) vs 7 nearest real residential neighbors (bottom):
+![cVAE diagnostic](../assets/method_results/cvae_diagnostic/nn_grid.png)
+
+### Residential label audit
+Suspect and confident grids both show residential-looking scenes (label is consistent):
+![Suspect residential](../assets/method_results/label_audit/suspect_residential.png)
+![Confident residential](../assets/method_results/label_audit/confident_residential.png)
+
+### Method 1 — SD Img2Img (failed)
+Hallucinated houses and deleted signs (5 comparisons):
+![Method 1 comparison 1](../assets/method_results/compare_01.jpg)
+![Method 1 comparison 2](../assets/method_results/compare_02.jpg)
+
+### Method 2 — CycleGAN (successful)
+Epoch 20 comparisons — real day (left) vs generated night (right), structure preserved:
+![Method 2 epoch 20 comparison 1](../assets/method_results/method_2/epoch20_holdout_1.jpg)
+![Method 2 epoch 20 comparison 2](../assets/method_results/method_2/epoch20_holdout_2.jpg)
+![Method 2 epoch 20 comparison 3](../assets/method_results/method_2/epoch20_holdout_3.jpg)
