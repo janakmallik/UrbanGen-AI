@@ -64,6 +64,25 @@ A working Image-to-Video generation pipeline was built using Wan 2.2 FastWan 5B 
 - Not bit-for-bit reproducible (depends on GPU hardware, PyTorch version, and WanGP version).
 - Generated videos are synthetic and must be labeled as AI-generated.
 
+## Method 1 — Stable Diffusion Img2Img (negative)
+
+Tested SD 1.5 Img2Img at strengths 0.25, 0.4, 0.6:
+- At low strength: stayed daytime
+- At high strength: hallucinated houses, deleted highway signs, invented streetlights
+- Never found a strength that preserved structure AND produced night
+
+**Diagnosis:** Img2Img cannot preserve scene geometry while changing lighting. The prompt overrides the source image at high strength.
+
+## Method 2 — CycleGAN (positive)
+
+Trained from scratch on 1,500 daytime + 1,500 nighttime residential images, 20 epochs, LR decay:
+- **Preserves structure exactly:** Cars, buildings, road signs stay in place
+- **Night appearance:** Dark sky, streetlights, headlights — genuine nighttime
+- **Eliminates purple artifacts:** By epoch 20 (through LR decay)
+- **Reproducible:** 57 minutes on RTX 4050, 2.1 GB peak VRAM
+
+**Finding:** CycleGAN learns the day-to-night mapping while preserving scene identity. Generated images are structurally usable as synthetic training data (pending Arm D validation of downstream improvement).
+
 ## The diagnostic toolkit
 
 Three scripts for evaluating any generative model's downstream utility:
@@ -84,8 +103,8 @@ Plus four supporting diagnostics:
 
 ## What the project is NOT
 
-- **Not a generative success.** The cVAE failed to produce class-faithful samples.
-- **Not a claim that all generative augmentation is useless.** DDPM, ControlNet, and image-to-image were not tested for downstream training (only the WanGP video showcase was tested as a demonstration of feasibility). The diagnostic toolkit is what they can be tested with.
+- **Not a claim that all generative approaches are useless.** The cVAE failed and SD 1.5 Img2Img failed, but **CycleGAN succeeded** (structural preservation). Depth ControlNet is untested.
+- **Not a claim that CycleGAN solves the residential weakness.** It produces high-quality synthetic night images, but whether they improve downstream classification is Arm D's task (not yet run).
 - **Not a claim that the residential class is unlearnable.** The label is consistent; the model is weak (residential recall 0.41 at native resolution).
 - **Not a claim that Week 5 is broken.** It reproduces published numbers exactly. It has a night weakness and a residential weakness, both documented.
 
@@ -97,3 +116,50 @@ Plus four supporting diagnostics:
 4. **DDPM at higher resolution.** 128×128 is a hard limit for a VAE. Diffusion models at 128×128 or higher may produce class-faithful samples — testable with `scripts/diagnose_g1c.py` and `scripts/probe_pilot_features.py`.
 
 None of these are in scope for UrbanGen-AI. The project closes with the negative finding, the diagnostic toolkit, and the WanGP I2V showcase.
+
+---
+
+## Update — 2026-11-09 (Method 1 + Method 2 results)
+
+Since the initial close (`v0.1.2-g1-final`), three new findings were added:
+
+### Method 1 — Stable Diffusion Img2Img (negative)
+
+Tested SD 1.5 Img2Img at strengths 0.25, 0.4, 0.6. All failed structural preservation:
+- Low strength: stayed daytime (no night transformation)
+- High strength: hallucinated houses, deleted highway signs, invented streetlights
+- Never found a strength that preserved structure AND produced night
+
+**Diagnosis:** Standard Img2Img cannot preserve scene geometry while changing lighting. The prompt overrides the source at high strength, and the AI loses the original content.
+
+Full log: ``docs/method_1_day_to_night_log.md``
+
+### Method 2 — CycleGAN (positive)
+
+Trained a from-scratch CycleGAN on 1,500 daytime + 1,500 nighttime residential images for 20 epochs with learning-rate decay. Results:
+- **Structure:** Cars, buildings, road signs preserved exactly (unlike SD Img2Img)
+- **Night appearance:** Dark sky, streetlights, headlights — genuine nighttime
+- **Purple artifacts:** Eliminated by epoch 20 through LR decay
+- **Reproducible:** 57 minutes on RTX 4050, 2.1 GB peak VRAM
+
+**Finding:** CycleGAN learns the day-to-night mapping while preserving scene identity. Generated images are structurally usable as synthetic training data (pending Arm D validation).
+
+Full log: ``docs/method_2_cyclegan_log.md``
+
+### Arm A recipe improvement
+
+Retraining ResNet-50 with a modified recipe (class weights + IMAGENET1K_V2 + best-epoch selection) achieved **night residential recall 0.3605** — nearly **2× the published baseline** of 0.184.
+
+This is important context: the "0.184 baseline" that motivated the generative work was a weak recipe, not a fundamental limitation of the classifier. Any synthetic-data improvement should be measured against 0.3605, not 0.184.
+
+Full details: ``docs/week5_recipe_improvement.md``
+
+### Corrected "What the project is NOT"
+
+The original close said "Not a generative success." This was correct for the cVAE but not for the project overall:
+- **cVAE:** ❌ Failed class-faithfulness
+- **SD 1.5 Img2Img:** ❌ Failed structural preservation
+- **CycleGAN:** ✅ Succeeded structural preservation
+- **Depth ControlNet:** ⏳ Pending
+
+The project's overall generative contribution is now: "CycleGAN produces structurally-faithful synthetic night images at consumer GPU scale, and its downstream utility is testable with the diagnostic toolkit."

@@ -25,6 +25,8 @@ dependencies = [
     "diffusers>=0.42.1",
     "accelerate>=1.15.0",
     "transformers>=5.22.2",
+    "lpips>=0.1.4",
+    "scikit-image>=0.26.0",
 ]
 
 [project.optional-dependencies]

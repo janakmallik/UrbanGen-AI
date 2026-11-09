@@ -26,6 +26,7 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Night residential recall drops 0.292 vs daytime | Same | n_A=397, n_B=147; both > 145 |
 | Rainy city street recall rises 0.042 vs clear | Same | n_A=1599, n_B=226 |
 | Residential labels are mostly consistent (not noisy) | `outputs/label_audit/suspect_residential.png`, `confident_residential.png` | Visual inspection: both grids show residential-looking scenes |
+| CycleGAN achieves structural preservation with night appearance on 5 holdout images | `outputs/method_2_resume/metrics.csv` | Epoch 20, 5 held-out images, CLIP night score > 0.93, SSIM ~0.2 |
 
 ---
 
@@ -39,6 +40,7 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Rainy residential recall drop (−0.101) | `docs/robustness_report_v2.md` | n_B=37; CI includes zero; not statistically supported |
 | Snowy macro-F1 (0.654) vs clear (0.685) | Same | Not tested within-class; class-mix confound likely |
 | Daytime residential recall 0.476, night 0.184 | Same | Correct, but 0.476 is itself lower than expected for a "daytime" subset — the residency class remains the weakest class |
+| CycleGAN-generated night images will improve Week 5 residential recall | Not yet tested (Arm D) | Structural + appearance valid, but classifier improvement requires empirical validation |
 
 ---
 

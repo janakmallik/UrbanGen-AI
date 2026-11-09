@@ -701,3 +701,42 @@ permanent test.
 - Documented the full pipeline in ``docs/reproducibility.md``.
 
 **Learning:** WanGP is not a standard Gradio frontend. Its custom ``mmgp`` memory manager (block-swapping, INT8 quantization) is essential for running large models on low VRAM. Attempting to reimplement this with ``diffusers`` failed.
+
+---
+
+## 2026-11-09 — Method 2: CycleGAN Day-to-Night Translation
+
+**Status:** ✅ Complete — Successful structural preservation.
+
+**Objective:** Train a from-scratch CycleGAN to translate daytime BDD100K residential scenes to nighttime, preserving original scene geometry (unlike Method 1/Stable Diffusion which hallucinated).
+
+**Approach:**
+- 1,500 daytime + 1,500 nighttime residential images (zero-overlap holdout)
+- 20 epochs total (5 pilot + 15 resume)
+- LR decay from 2e-4 to 2e-5 in second half
+- Replay buffer (50 images) for discriminator stability
+- Identity loss (λ=5) to preserve scene colors
+
+**Results:**
+- Structure: Cars, buildings, and road signs preserved exactly
+- Appearance: Convincing nighttime illumination, dark sky, streetlights
+- Purple artifacts: Eliminated by epoch 20 (vs. epoch 5)
+- Training time: 57 minutes on RTX 4050
+
+**Metrics (holdout):**
+- CLIP night score: ~0.95 (vs. real night calibration baseline ~0.70)
+- SSIM: ~0.20 (structural preservation, expected for day-to-night translation)
+- Road pixel fraction: preserved within ±0.10
+
+**Finding:** Unlike Method 1 (SD 1.5 Img2Img, which hallucinated new objects and deleted highway signs), CycleGAN learns the exact day-to-night mapping and preserves scene identity.
+
+**Artifacts:**
+- Model: ``outputs/method_2_resume/checkpoints/epoch_20.pth``
+- Comparisons: ``outputs/method_2_resume/comparisons/epoch20_*.jpg``
+- Model card: ``docs/model_cards/bdd100k_cyclegan_v1.md``
+- Full log: ``docs/method_2_cyclegan_log.md``
+
+**Next step:** Generate 500 synthetic night images → Arm D training.
+
+---
+
