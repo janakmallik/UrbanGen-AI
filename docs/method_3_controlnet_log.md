@@ -1,7 +1,8 @@
 
 # Method 3 — Depth ControlNet (Plan + Placeholder)
 
-**Status:** Not started. This is a planning document, to be updated when Method 3 runs.
+**Status:** Not started. Metric calibration completed (`outputs/controlnet_calibration/`);
+generation pipeline not yet run. This is a planning document, to be updated when Method 3 runs.
 
 ## Objective
 Test whether depth-conditioned diffusion can preserve urban scene structure better than CycleGAN (Method 2) or Img2Img (Method 1). The hypothesis: depth conditioning locks geometry, so the model can change lighting aggressively without hallucinating new content.

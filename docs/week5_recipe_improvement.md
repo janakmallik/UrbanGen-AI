@@ -29,3 +29,23 @@ Because our Arm A recipe gets 0.36 night residential recall, any synthetic data 
 
 ## Reproducibility
 To reproduce this finding:
+
+```powershell
+uv run python scripts\train_week5_augmented_arms_v2.py --arm A --seed 42
+```
+
+Expected: `night.residential.recall ≈ 0.3605`, `best_epoch = 3`, `best_val_macro_f1 ≈ 0.7100`.
+
+The recorded run is preserved at `outputs/week5_arms/results_A_seed42.json`.
+```
+
+**c) `docs/train_week5_augmented_arms.md` — add a reconciliation note**
+
+At the top, after the title, insert:
+
+```markdown
+> **Note (2026-11-10):** Arm B and Arm C were never run. After Arm A
+> produced 0.3605 night residential recall (macro-F1 0.6475), the project
+> pivoted to Methods 1–4 (documented in `docs/generative_image_methods_log.md`).
+> The A/B/C decision tree below was abandoned, not applied. Arm D's baseline
+> is Arm A (0.3605 recall), not the decision tree in this document.
