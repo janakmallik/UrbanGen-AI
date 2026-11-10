@@ -35,6 +35,19 @@ The project closes with five contributions:
 4. **A successful CycleGAN day-to-night pipeline** that preserves scene geometry (unlike Stable Diffusion).
 5. **A working Image-to-Video showcase pipeline** using WanGP and Wan2.2 FastWan 5B.
 
+### Update — November 10, 2026
+
+Method 2 training is complete (20 epochs, CycleGAN, 57 minutes on RTX 4050). 500 synthetic night images were generated from the trained model. Three automated filters (CLIP, luminance, SegFormer paved-surface) were applied, yielding 282 accepted images.
+
+**Follow-up finding:** The filters were found to be unreliable. Visual inspection showed:
+- ~90% of "paved_surface" rejections were actually good images
+- ~80% of "luminance" rejections were good images  
+- 15-25% of accepted images had structural failures
+
+**Consequence:** Manual curation of the 500 generated images is required before Arm D training. Method 3 (Depth ControlNet) is deferred until after Arm D results are read.
+
+**Current next step:** Arm D training (real data + manually-curated synthetic night images) with the Arm A baseline of 0.3605 night residential recall as the comparison target.
+
 ## The four-method plan (all tested)
 
 | Method | Approach | Outcome |
