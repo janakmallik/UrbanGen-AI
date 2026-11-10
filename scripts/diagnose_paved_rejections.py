@@ -1,6 +1,7 @@
 import csv
 
-log = list(csv.DictReader(open("outputs/method_2_synthetic/filter_log.csv")))
+with open("outputs/method_2_synthetic/filter_log.csv") as f:
+    log = list(csv.DictReader(f))
 rejected = [r for r in log if r["reason"] == "paved_surface"]
 
 print(f"Paved surface rejections: {len(rejected)}")

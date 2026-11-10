@@ -114,7 +114,7 @@ for src_name, gen_name in pairs:
         missing_generated.append(gen_name)
 
 if missing_sources or missing_generated:
-    print(f"\n❌ Missing files:")
+    print("\n❌ Missing files:")
     if missing_sources:
         print(f"  Missing sources ({len(missing_sources)}):")
         for s in missing_sources[:10]:
@@ -220,8 +220,8 @@ if render_failures:
         f"Fix data before curation."
     )
 print(f"\n✅ All {len(accepted)} pairs rendered without errors")
-print(f"\nNext steps:")
+print("\nNext steps:")
 print(f"  1. Open {OUT_DIR}")
-print(f"  2. For each page, record: reject=[indices], uncertain=[indices]")
-print(f"  3. Paste the per-page labels")
-print(f"  4. Run verify_source_split_membership.py")
+print("  2. For each page, record: reject=[indices], uncertain=[indices]")
+print("  3. Paste the per-page labels")
+print("  4. Run verify_source_split_membership.py")

@@ -1,13 +1,15 @@
 ﻿import csv
 from pathlib import Path
-from PIL import Image, ImageDraw
-import torch
+
 import numpy as np
+import torch
 import torch.nn as nn
+from PIL import Image, ImageDraw
 from torchvision import transforms
 
 # Load filter log
-log = list(csv.DictReader(open('outputs/method_2_synthetic/filter_log.csv')))
+with open("outputs/method_2_synthetic/filter_log.csv") as f:
+    log = list(csv.DictReader(f))
 rejected = [r for r in log if r['reason'] == 'paved_surface']
 rejected_sorted = sorted(rejected, key=lambda r: abs(float(r['paved_frac_orig']) - float(r['paved_frac_fake'])), reverse=True)
 top5 = rejected_sorted[:5]
@@ -68,13 +70,13 @@ for i, r in enumerate(top5, 1):
     if not src_path:
         print(f'Missing source: {src_name}')
         continue
-    
+
     src = Image.open(src_path).convert('RGB').resize((512, 288))
     tensor = transform(Image.open(src_path).convert('RGB')).unsqueeze(0).to(device)
     with torch.no_grad():
         fake = G_AB(tensor)
     gen = Image.fromarray(((fake.squeeze(0).cpu() * 0.5 + 0.5).clamp(0, 1).numpy().transpose(1, 2, 0) * 255).astype(np.uint8))
-    
+
     canvas = Image.new('RGB', (1024, 288 + 50), (30, 30, 30))
     canvas.paste(src, (0, 50))
     canvas.paste(gen, (512, 50))
