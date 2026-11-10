@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-11-10T14:18:30.257941",
+  "check_scope": "source_filename_membership_only",
+  "note": "Does NOT verify image content hashes; does NOT check generated images against eval sets. Reproducibility check recomputes seed-42 selection from documented procedure and compares against recorded source_selection.json.",
+  "accepted_synthetic_count": 282,
+  "unique_sources": 282,
+  "unique_generated": 282,
+  "reconstructed_500_matches_recorded": true,
+  "filter_log_matches_recorded": true,
+  "sources_in_train_split": true,
+  "sources_in_val_clean": 0,
+  "sources_in_test_clean": 0,
+  "generated_files_on_disk": 282,
+  "sources_overlap_method_2_reserved": 0,
+  "duplicate_basenames": 0,
+  "manifest_schemas_observed": {
+    "val_clean": "list[str] (n=4727)",
+    "test_clean": "list[str] (n=4745)"
+  },
+  "passed": true
+}
