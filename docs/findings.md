@@ -32,6 +32,26 @@ Trained from scratch on 1,500 daytime + 1,500 nighttime residential images, 20 e
 
 **Finding:** CycleGAN learns the day-to-night mapping while preserving scene identity. Generated images are structurally usable as synthetic training data (pending Arm D validation of downstream improvement).
 
+## The filter failure (follow-up to Method 2)
+
+After training the CycleGAN and generating 500 synthetic images, we discovered that **none of our automated filters reliably separated good from bad night transformations**:
+
+| Filter | Rejections | False rate (from inspection) |
+|---|---|---|
+| paved_surface (SegFormer) | 208 | ~90% of inspected rejections were false |
+| CLIP night < 0.50 | 5 | ~60% of inspected rejections were false |
+| luminance > 0.20 | 5 | ~80% of inspected rejections were false |
+| Combined acceptances | 282 | ~15-25% contained structural failures |
+
+**What this means:** We cannot use automated filtering to build a clean synthetic dataset. Manual curation of all 500 generated images is required before Arm D training.
+
+**Root cause:** 
+- SegFormer-B0 was trained on ADE20K (mostly daytime). It misclassifies night roads, producing systematic bias.
+- CLIP night score is a relative softmax over 2 prompts, not an absolute probability.
+- Luminance is a useful heuristic but rejects images with legitimate bright spots (streetlights, illuminated buildings).
+
+**The lesson:** For day-to-night generative output, no single metric is sufficient. The only reliable filter is human visual inspection of paired source + generated images.
+
 ## The pipeline-mismatch finding
 
 The project's own robustness report initially reported residential recall 0.124 for Week 5. Pipeline verification showed this was measured on the wrong input pipeline (128×128 cache strip upsampled to 224×224). The corrected evaluation on native JPEGs (Resize(256)→CenterCrop(224)) reproduces published Week 5 exactly: **residential recall 0.4121**.

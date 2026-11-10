@@ -113,3 +113,21 @@ The common failure mode is **plausible-looking numbers (or code) that nobody ver
 5. **Visual inspection is a required gate.** Any claim about "the model generates X" or "the label is Y" requires at least 5–10 example images looked at by a human. Metrics without visual confirmation are provisional.
 
 6. **Respect the official entry points.** When integrating a third-party engine (like WanGP), look for its documented headless API before attempting to reverse-engineer its internal files or rebuild its memory manager.
+
+## Episode 7 — The unreliable filter
+
+**What happened:** After generating 500 synthetic night images with CycleGAN, we applied three filters (CLIP night score, luminance, SegFormer paved-surface fraction). 282 images passed. When we inspected the rejections and acceptances, we found:
+- 90% of the "paved_surface" rejections were visually good images
+- 80% of the "luminance" rejections were visually good images
+- 15-25% of the "accepted" images had structural failures
+
+**Initial interpretation:** The filters were working as designed (rejecting bad, accepting good).
+
+**What was wrong:** 
+- SegFormer-B0 was trained on ADE20K (daytime scenes). It misclassifies nighttime roads, producing bias.
+- CLIP night score is a relative softmax (daytime prompt vs nighttime prompt) — not an absolute nighttime probability.
+- Luminance rejects images with bright spots (streetlights, lit buildings), which are exactly the features we want.
+
+**The lesson:** For generative augmentation, no automated filter is reliable. Every filter must be validated by inspecting the images it accepts and rejects. A filter that flags 40% of images as "bad" is not a good filter — it's an untested heuristic that will destroy training data.
+
+**The fix:** Manual curation. Show source + generated pairs, let human eyes decide good/bad. This is ~30 min for 500 images using a contact sheet.

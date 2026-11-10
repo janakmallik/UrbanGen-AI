@@ -740,3 +740,25 @@ permanent test.
 
 ---
 
+## 2026-11-10 — Method 2 synthetic generation (filter failure)
+
+**Status:** Generation complete (282/500 accepted) but filters unreliable.
+
+**Filter breakdown:**
+- paved_surface (SegFormer): 208 rejections — 5/5 inspected were **false rejections** (good structural preservation)
+- clip: 5 rejections — 3/5 inspected were **false rejections**
+- luminance: 5 rejections — 4/5 inspected were **false rejections**
+- 20 accepted images inspected — 3-5 showed structural failures (near-black, smeared)
+
+**Conclusion:** No automated filter is reliable. Manual curation required.
+
+**Next step:** Manual visual inspection of all 500 generated images. Build a curation manifest with good/bad labels. Use good images only for Arm D.
+
+**Artifacts:**
+- `outputs/method_2_synthetic/filter_log.csv` — all 500 with filter reasons
+- `outputs/method_2_synthetic/rejected_inspection/` — 5 sample rejections
+- `outputs/method_2_synthetic/accepted_inspection/` — 20 sample acceptances
+- `outputs/method_2_synthetic/clip_lum_inspection/` — 10 clip/lum rejections
+
+---
+

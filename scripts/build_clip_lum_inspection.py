@@ -1,0 +1,83 @@
+﻿import csv
+from pathlib import Path
+from PIL import Image, ImageDraw
+import torch
+import numpy as np
+import torch.nn as nn
+from torchvision import transforms
+
+log = list(csv.DictReader(open('outputs/method_2_synthetic/filter_log.csv')))
+rejected_clip_lum = [r for r in log if r['reason'] in ('clip', 'luminance')]
+print(f'Clip/luminance rejections: {len(rejected_clip_lum)}')
+
+# Load CycleGAN
+class ResBlock(nn.Module):
+    def __init__(self, c):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Conv2d(c, c, 3, 1, 1), nn.InstanceNorm2d(c), nn.ReLU(inplace=True),
+            nn.Conv2d(c, c, 3, 1, 1), nn.InstanceNorm2d(c),
+        )
+    def forward(self, x):
+        return x + self.block(x)
+
+class Generator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.enc = nn.Sequential(
+            nn.Conv2d(3, 32, 7, 1, 3), nn.InstanceNorm2d(32), nn.ReLU(inplace=True),
+            nn.Conv2d(32, 64, 3, 2, 1), nn.InstanceNorm2d(64), nn.ReLU(inplace=True),
+            nn.Conv2d(64, 128, 3, 2, 1), nn.InstanceNorm2d(128), nn.ReLU(inplace=True),
+        )
+        self.res = nn.Sequential(*[ResBlock(128) for _ in range(4)])
+        self.dec = nn.Sequential(
+            nn.ConvTranspose2d(128, 64, 3, 2, 1, 1), nn.InstanceNorm2d(64), nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(64, 32, 3, 2, 1, 1), nn.InstanceNorm2d(32), nn.ReLU(inplace=True),
+            nn.Conv2d(32, 3, 7, 1, 3), nn.Tanh(),
+        )
+    def forward(self, x):
+        return self.dec(self.res(self.enc(x)))
+
+device = 'cuda'
+ckpt = torch.load(r'outputs/method_2_resume/checkpoints/epoch_20.pth', map_location='cpu', weights_only=False)
+G_AB = Generator().to(device)
+G_AB.load_state_dict(ckpt['G_AB'], strict=True)
+G_AB.eval()
+del ckpt
+
+transform = transforms.Compose([
+    transforms.Resize((288, 512)),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+])
+
+out_dir = Path('outputs/method_2_synthetic/clip_lum_inspection')
+out_dir.mkdir(parents=True, exist_ok=True)
+source_root = Path(r'C:\Users\Janak Mallik\ml-data\bdd100k\images\100k\train')
+
+for i, r in enumerate(rejected_clip_lum, 1):
+    src_name = r['source']
+    src_path = None
+    for p in source_root.rglob(src_name):
+        src_path = p
+        break
+    if not src_path:
+        continue
+    
+    src = Image.open(src_path).convert('RGB').resize((512, 288))
+    tensor = transform(Image.open(src_path).convert('RGB')).unsqueeze(0).to(device)
+    with torch.no_grad():
+        fake = G_AB(tensor)
+    gen = Image.fromarray(((fake.squeeze(0).cpu() * 0.5 + 0.5).clamp(0, 1).numpy().transpose(1, 2, 0) * 255).astype(np.uint8))
+    
+    canvas = Image.new('RGB', (1024, 288 + 50), (30, 30, 30))
+    canvas.paste(src, (0, 50))
+    canvas.paste(gen, (512, 50))
+    draw = ImageDraw.Draw(canvas)
+    info = f'reason={r["reason"]} clip_n={r["clip_night"]} lum={r["luminance"]}'
+    draw.text((10, 15), f'SOURCE  {src_name[:30]}', fill=(255, 255, 255))
+    draw.text((522, 15), f'REJECTED  {info}', fill=(255, 255, 255))
+    canvas.save(out_dir / f'{r["reason"]}_{i:02d}.jpg')
+    print(f'Saved {r["reason"]}_{i:02d}.jpg')
+
+print(f'Done. Check {out_dir}')

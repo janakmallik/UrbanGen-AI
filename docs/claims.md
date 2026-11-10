@@ -27,6 +27,7 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Rainy city street recall rises 0.042 vs clear | Same | n_A=1599, n_B=226 |
 | Residential labels are mostly consistent (not noisy) | `outputs/label_audit/suspect_residential.png`, `confident_residential.png` | Visual inspection: both grids show residential-looking scenes |
 | CycleGAN achieves structural preservation with night appearance on 5 holdout images | `outputs/method_2_resume/metrics.csv` | Epoch 20, 5 held-out images, CLIP night score > 0.93, SSIM ~0.2 |
+| Method 2 generated 282 images at 56.4% survival from 500 sources | `outputs/method_2_synthetic/filter_log.csv` | Rejections: clip=5, luminance=5, paved_surface=208 (broken filter) |
 
 ---
 
@@ -41,6 +42,10 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Snowy macro-F1 (0.654) vs clear (0.685) | Same | Not tested within-class; class-mix confound likely |
 | Daytime residential recall 0.476, night 0.184 | Same | Correct, but 0.476 is itself lower than expected for a "daytime" subset — the residency class remains the weakest class |
 | CycleGAN-generated night images will improve Week 5 residential recall | Not yet tested (Arm D) | Structural + appearance valid, but classifier improvement requires empirical validation |
+| SegFormer-B0 is unreliable as a nighttime structural filter | Visual inspection of top-5 largest-delta rejections: all 5 were visually excellent night transformations |
+| CLIP night + luminance filters over-reject good images | 8/10 inspected clip/luminance rejections were visually good night images |
+| The 282 accepted set contains 15-25% structural failures | Inspection of 20 accepted images: 3-5 show near-black output or smeared structure |
+| No automated filter reliably separates good from bad synthetic night images | Combined evidence from paved_surface (208 false rejections), clip/lum (8/10 false rejections), and accepted set (3-5/20 false acceptances) |
 
 ---
 
@@ -54,6 +59,7 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Snowy is a moderate gap (macro-F1 based) | Same report | Not tested within-class. The macro-F1 number exists but may be class-mix confound. Marked provisional. |
 | Residential "class is fuzzy" | Pre-visual inspection | **Retracted after visual inspection.** The suspect and confident grids both show residential-looking scenes. The label is consistent. What's real is that OOF recall (0.70) is inflated by precision (0.37). |
 | Video leakage in OOF CV inflated recall | Audit assumption | **Retracted.** BDD100K 100K set has one frame per video (10th second), so adjacent-frame leakage doesn't apply. Weaker issue: some rides share videos, so near-duplicates across folds are possible but rare. |
+| The 282 accepted images are clean synthetic data | Showed to contain ~15-25% structural failures (near-black, smeared) when inspected |
 
 ---
 
