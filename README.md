@@ -49,7 +49,7 @@ Adding 276 manually curated CycleGAN synthetic nighttime images to ResNet-50 tra
 |---|---|---|
 | **Method 1** | SD 1.5 Img2Img (day→night) | ❌ Failed (hallucinated buildings, deleted signs) — see `docs/method_1_day_to_night_log.md` |
 | **Method 2** | CycleGAN from scratch | ✅ **Successful** — see `docs/method_2_cyclegan_log.md` |
-| **Method 3** | Depth ControlNet | ⏸️ Not attempted (deprioritized after Arm D finding) |
+| **Method 3** | Depth ControlNet | ⏸️ Deferred after Arm D-M2 success (calibration complete, generation not attempted) |
 | **Method 4** | WanGP I2V video generation | ✅ Showcase pipeline documented |
 
 ## Milestones

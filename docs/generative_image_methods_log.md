@@ -46,8 +46,7 @@ Master index of all four generative methods tested in UrbanGen-AI.
 **Synthetic dataset card:** ``docs/dataset_cards/bdd100k_synthetic_cyclegan.md``
 
 ## Method 3 — Depth ControlNet
-
-**Status:** Not started. Plan approved, no implementation yet.
+**Status:** Deferred (2026-11-11). Plan documented; metric calibration completed. Generation pipeline not run. See `docs/method_3_controlnet_log.md` for full plan and deferral reasoning.
 
 **Plan:** Stable Diffusion 1.5 + ``lllyasviel/control_v11f1p_sd15_depth`` + ``Intel/dpt-hybrid-midas`` depth extractor. 512×288 resolution. 5-image pilot first, then scale to 500 if successful.
 
