@@ -1,0 +1,9 @@
+{
+  "seed": 999,
+  "eligible_pool_size": 3958,
+  "selected_filename": "90ea4f91-8c13f832.jpg",
+  "selected_sha256": "d151ca3cb8cdc36cc7349e738576b5303d99740e74f0f8351a8d07e41e8fdc59",
+  "excluded_method2": 3400,
+  "excluded_val": 4727,
+  "excluded_test": 4745
+}

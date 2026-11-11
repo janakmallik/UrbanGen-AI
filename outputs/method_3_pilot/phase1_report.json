@@ -1,0 +1,51 @@
+{
+  "phase": 1,
+  "git_sha": "e13f96839c0adda24284708542658863adae3638",
+  "environment": {
+    "torch": "2.6.0+cu124",
+    "diffusers": "0.42.1",
+    "transformers": "5.22.2",
+    "cuda": "12.4",
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "total_vram_gb": 6.0
+  },
+  "models": {
+    "depth": {
+      "id": "Intel/dpt-hybrid-midas",
+      "commit_sha": "unresolved"
+    },
+    "controlnet": {
+      "id": "lllyasviel/control_v11f1p_sd15_depth",
+      "commit_sha": "unresolved"
+    }
+  },
+  "source_selection": {
+    "seed": 999,
+    "sample_filename": "90ea4f91-8c13f832.jpg",
+    "sample_sha256": "d151ca3cb8cdc36cc7349e738576b5303d99740e74f0f8351a8d07e41e8fdc59",
+    "eligible_pool_size": 3958,
+    "excluded_method2": 3400,
+    "excluded_val": 4727,
+    "excluded_test": 4745
+  },
+  "vram_gb": {
+    "note": "allocated = active tensors; reserved = PyTorch pool (includes fragmentation); neither equals total GPU usage (display + other processes)",
+    "total_vram_gb": 6.0,
+    "free_vram_before_dpt_gb": 4.96,
+    "free_vram_before_controlnet_gb": 4.91,
+    "safe_limit_dpt_gb": 4.71,
+    "safe_limit_controlnet_gb": 4.67,
+    "dpt_peak_allocated": 0.38,
+    "dpt_peak_reserved": 0.46,
+    "dpt_incremental": 0.38,
+    "dpt_gate_pass": true,
+    "controlnet_peak_allocated": 0.69,
+    "controlnet_peak_reserved": 0.74,
+    "controlnet_incremental": 0.68,
+    "controlnet_gate_pass": true
+  },
+  "artifacts": {
+    "source_image": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\smoke_test_source.png",
+    "depth_map": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\smoke_test_depth.png"
+  }
+}
