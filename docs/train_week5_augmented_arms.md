@@ -1,5 +1,12 @@
 # The complete guide to what's running right now
 
+> **Note (2026-11-10):** The pre-registered decision rule in this document
+> (arm C residential recall ≥ 0.35 → stop) was superseded by the macro-F1
+> rule used in `train_week5_augmented_arms_v2.py` (arm C night macro-F1 ≥
+> 0.68 → stop). See `docs/decision_rule_reconciliation.md` for the
+> rationale. Arms A, C, D were run under the superseded rule. Arm B was
+> not run.
+
 You're running a controlled experiment with three training variants of the same neural network. Let me walk through every piece of it — from the data on disk, to the pixels being fed to the GPU, to how we'll interpret the final number.
 
 ---
@@ -510,7 +517,7 @@ This is a known limitation. For future runs with `--seeds 42 123 7`, this become
 
 Assuming you let arm A/B/C finish:
 
-**Day 1 (today)**: Complete the run. Read the summary. Apply the decision rule.
+**Day 1 (2026-11-10)**: Complete the run. Read the summary. Apply the decision rule.
 
 **If arm C ≥ 0.35 (Branch 1)** — the project essentially ends here for this weakness. You'd:
 - Re-run with `--seeds 42 123 7` to confirm the finding isn't a seed fluke (3× cost = 15-20 hours)

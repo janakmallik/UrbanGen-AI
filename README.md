@@ -25,28 +25,23 @@ The project tested three generative approaches:
 
 ## Project status
 
-**v0.1.3-g1-final** — Complete. All three generative methods tested and documented.
+**v0.2.0-g2-arm-d-seed42** — Arm D finding landed. Qualified success at single seed.
 
-The project closes with five contributions:
+The project's central research question — whether synthetic urban data improves downstream recognition — has a partial answer: **yes, for nighttime residential recall specifically, at a documented cost to daytime precision.**
 
-1. **A reusable diagnostic toolkit** for evaluating any generative pipeline's downstream utility before committing to a fine-tune.
-2. **A corrected Week 5 robustness report** — verified to reproduce published numbers exactly, revealing night as the dominant robustness weakness.
-3. **A documented pipeline-mismatch episode** with the reference-check pattern that caught it.
-4. **A successful CycleGAN day-to-night pipeline** that preserves scene geometry (unlike Stable Diffusion).
-5. **A working Image-to-Video showcase pipeline** using WanGP and Wan2.2 FastWan 5B.
+- Method 2 (CycleGAN) synthetic nighttime data: **statistically supported improvement** at night residential recall over both real-data-only and photometric augmentation controls, when measured at seed 42.
+- Trade-off: **daytime macro-F1 drops by 0.0224**, exceeding the pre-registered 0.02 guardrail.
+- Single seed only. Multi-seed confirmation has not been run.
 
-### Update — November 10, 2026
+Full details: `docs/arm_d_findings.md`, `docs/claims.md`.
 
-Method 2 training is complete (20 epochs, CycleGAN, 57 minutes on RTX 4050). 500 synthetic night images were generated from the trained model. Three automated filters (CLIP, luminance, SegFormer paved-surface) were applied, yielding 282 accepted images.
+## Arm D result (qualified success, seed 42)
 
-**Follow-up finding:** The filters were found to be unreliable. Visual inspection showed:
-- ~90% of "paved_surface" rejections were actually good images
-- ~80% of "luminance" rejections were good images  
-- 15-25% of accepted images had structural failures
+Adding 276 manually curated CycleGAN synthetic nighttime images to ResNet-50 training improved nighttime residential recall from **0.3605 → 0.5170** (paired bootstrap Δ=+0.158, 95% CI [+0.085, +0.229], excludes zero), a +43% relative improvement over the Arm A baseline. The improvement over Arm C (photometric augmentation, 0.4150 → 0.5170) is also statistically supported at Δ=+0.104.
 
-**Consequence:** Manual curation of the 500 generated images is required before Arm D training. Method 3 (Depth ControlNet) is deferred until after Arm D results are read.
+**Trade-off:** Daytime macro-F1 dropped from 0.7440 (Arm C) to 0.7216 (Arm D) — a 0.0224 drop, violating the pre-registered 0.02 guardrail. The confusion matrix shows the classifier shifts toward residential predictions, which helps at night but creates false positives during the day (day city-street recall drops from 81.3% → 74.5%).
 
-**Current next step:** Arm D training (real data + manually-curated synthetic night images) with the Arm A baseline of 0.3605 night residential recall as the comparison target.
+**Verdict:** Synthetic augmentation works for the specific problem it targets, at a real cost. Full details in `docs/arm_d_findings.md`. Multi-seed confirmation (seed 123) is the next step.
 
 ## The four-method plan (all tested)
 
@@ -54,7 +49,7 @@ Method 2 training is complete (20 epochs, CycleGAN, 57 minutes on RTX 4050). 500
 |---|---|---|
 | **Method 1** | SD 1.5 Img2Img (day→night) | ❌ Failed (hallucinated buildings, deleted signs) — see `docs/method_1_day_to_night_log.md` |
 | **Method 2** | CycleGAN from scratch | ✅ **Successful** — see `docs/method_2_cyclegan_log.md` |
-| **Method 3** | Depth ControlNet | ⏳ Pending (next step) |
+| **Method 3** | Depth ControlNet | ⏸️ Not attempted (deprioritized after Arm D finding) |
 | **Method 4** | WanGP I2V video generation | ✅ Showcase pipeline documented |
 
 ## Milestones
@@ -68,6 +63,7 @@ Method 2 training is complete (20 epochs, CycleGAN, 57 minutes on RTX 4050). 500
 | **G1c** — Pilot diagnostic | `v0.1.1-g1c-closed` | **Closed as negative**: 0.6% synthetic residential |
 | **G1-final** — Close + Showcase | `v0.1.2-g1-final` | Diagnostic toolkit, corrected robustness report, I2V showcase |
 | **G2** — Generative methods | `v0.1.3-g1-final` | Method 1 failed, Method 2 succeeded, Method 3 pending |
+| **G2-ArmD** — Synthetic augmentation | `v0.2.0-g2-arm-d-seed42` | Qualified success at seed 42: night residential recall 0.36 → 0.52, day macro-F1 guardrail violated |
 
 ## The cVAE finding (G1c — negative)
 
@@ -198,8 +194,8 @@ UrbanMind-AI's Week 5 ResNet-50 is a **city-street detector**: 88% recall on cit
 ## What this project is NOT
 
 - **Not a claim that the cVAE approach works.** It failed.
-- **Not a claim that Stable Diffusion cannot do day-to-night.** Method 1 tested SD 1.5 Img2Img specifically; ControlNet is Method 3 (pending).
-- **Not a claim that CycleGAN solves the residential weakness.** Method 2 preserves structure, but downstream classification improvement is Arm D's task (not yet run).
+- **Not a claim that Stable Diffusion cannot do day-to-night.** Method 1 tested SD 1.5 Img2Img specifically; ControlNet is Method 3 (not attempted).
+- **Not a claim that CycleGAN solves the residential weakness without cost.** Arm D showed +0.158 night residential recall at seed 42, but with a documented daytime macro-F1 drop of 0.0224. The trade-off is real.
 - **Not deployed.** No API, no Docker, no serving. UrbanMind-AI's Week 12 is the natural home.
 
 ## Setup
@@ -292,9 +288,9 @@ Six diagnostic episodes. Full version in `docs/lessons.md`.
 
 ## What future work should test
 
-1. **Arm D training** — use Method 2's CycleGAN-generated night images to test whether synthetic augmentation improves Week 5's night residential recall beyond the 0.3605 baseline.
-2. **Method 3 (Depth ControlNet)** — structural conditioning may improve on CycleGAN's quality.
-3. **Night augmentation via conventional means** — simple tone-curve + ColorJitter (UrbanMind-AI scope).
+1. **Arm D multi-seed confirmation** — rerun Arms C and D at seed 123 to verify the seed-42 finding holds across training seeds.
+2. **Daytime trade-off mitigation** — stratified loss weighting, or a light fine-tune after synthetic training, to recover the 0.02 day macro-F1 cost.
+3. **Method 3 (Depth ControlNet)** — structural conditioning may beat CycleGAN on quality and reduce the daytime artifact.
 4. **DDPM at higher resolution** — beyond cVAE's 128×128 limit.
 
 ## License
@@ -309,7 +305,7 @@ MIT — see [LICENSE](LICENSE).
   author  = {Mallik, Janak},
   year    = {2026},
   url     = {https://github.com/janakmallik/UrbanGen-AI},
-  note    = {Release v0.1.3-g1-final. Consumes BDD100K splits from UrbanMind-AI v0.10.0-week10-calibration}
+  note    = {Release v0.2.0-g2-arm-d-seed42. Consumes BDD100K splits from UrbanMind-AI v0.10.0-week10-calibration}
 }
 ``````
 
