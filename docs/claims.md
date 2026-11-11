@@ -29,6 +29,11 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Method 2 generated 282 images at 56.4% survival from 500 sources | `outputs/method_2_synthetic/filter_log.csv` | Rejections: clip=5, luminance=5, paved_surface=208 |
 | Method 2 source selection: 500 filenames, seed-42 reproducibility | `outputs/method_2_synthetic/source_selection.json`, `source_split_membership.json` | Ordered reconstruction matches recorded selection; zero overlap with val_clean, test_clean, or reserved splits |
 | WanGP generates 720p ~3-second video in ~1 min on 6 GB VRAM | `docs/reproducibility.md`, `scripts/generate_i2v_showcase.py` | Reproducible given fixed environment |
+| Arm A night residential recall = 0.3605 | `outputs/week5_arms/results_A_seed42.json` | Seed 42, best epoch 3, val macro-F1 0.7100 |
+| Arm C night residential recall = 0.4150 | `outputs/week5_arms/results_C_seed42.json` | Seed 42, best epoch 3, val macro-F1 0.7117 |
+| Arm D night residential recall = 0.5170 | `outputs/week5_arms/results_D_seed42.json` | Seed 42, best epoch 3, val macro-F1 0.7007 |
+| Arm D beats Arm A on night residential recall | `outputs/week5_arms/summary.json` | Paired bootstrap Δ=+0.1577, 95% CI [+0.0848, +0.2292], excludes zero |
+| Arm D beats Arm C on night residential recall | Same | Paired bootstrap Δ=+0.1036, 95% CI [+0.0357, +0.1678], excludes zero |
 
 ---
 
@@ -51,6 +56,21 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | The 282 accepted set contains some structural failures | Inspection of 20 accepted images (`outputs/method_2_synthetic/accepted_inspection/`) | 3–5 of 20 inspected showed near-black output or smeared structure. **Do not extrapolate 15–25% to the full 282**; full curation will determine the actual rate |
 | No automated filter reliably separates good from bad synthetic night images | Combined evidence: paved_surface (208 rejections, 5/5 inspected false), clip/luminance (10 inspected, 8 false), accepted set (20 inspected, 3–5 false) | **Based on 35 inspected images total.** Suggestive, not proven. Full visual curation is the planned next step |
 | CycleGAN-generated night images will improve Week 5 residential recall | Not yet tested (Arm D) | Structural + appearance valid at n=5; classifier improvement requires empirical validation |
+| Arm D beats Arm C on night macro-F1 | `outputs/week5_arms/summary.json` | Δ=+0.0140, 95% CI [-0.0093, +0.0380]. CI includes zero |
+| Arm D does not degrade daytime macro-F1 by more than 0.02 | `outputs/week5_arms/arm_d_guardrail_diagnostic.txt` | **Violated.** Day macro-F1 drop 0.0224 vs Arm C, exceeds pre-registered 0.0200 threshold |
+| Arm D trades city-street precision for residential recall | `outputs/week5_arms/arm_d_guardrail_diagnostic.txt` | Day city recall drops 6.8 pp (81.3% → 74.5%); day residential precision drops 7.0 pp (63.8% → 56.8%) |
+| Synthetic augmentation solves nighttime residential weakness | `docs/arm_d_findings.md` | Seed 42 only. Multi-seed confirmation not run. Trade-off documented |
+
+## Arm D findings (qualified success — seed 42 only)
+
+| Claim | Evidence | Caveat |
+|---|---|---|
+| Arm D (real + 276 synthetic) beats Arm A on night residential recall | `outputs/week5_arms/results_D_seed42.json`, paired bootstrap Δ=+0.158, CI [+0.085, +0.229] | Single seed. Test-set uncertainty only, not training-seed variance |
+| Arm D beats Arm C on night residential recall | Same, Δ=+0.104, CI [+0.036, +0.168] | Single seed |
+| Arm D does NOT beat Arm C on night macro-F1 | Same, Δ=+0.014, CI [-0.009, +0.038] | CI includes zero; cannot claim overall night improvement over conventional aug |
+| Arm D violates the daytime guardrail | `outputs/week5_arms/arm_d_guardrail_diagnostic.txt` | Day macro-F1 drop 0.0224 vs C, threshold 0.0200 |
+| Arm D trades city-street precision for residential recall | Confusion matrix diagnostic | Day city recall drops 6.8 pp, day residential precision drops 7.0 pp |
+| Synthetic augmentation solves nighttime residential weakness in principle | Combined with the confusion-matrix pattern | Seed 42 only; multi-seed confirmation pending |
 
 ---
 
@@ -88,3 +108,6 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 - A claim marked "Verified" is reproducible by running the named script, on the named split, with the stated n
 - Claims based on visual inspection are Provisional unless the inspection covered the full population being claimed about
 - "Provisional" does not mean "wrong" — it means "measured, but the measurement has documented limitations"
+
+---
+

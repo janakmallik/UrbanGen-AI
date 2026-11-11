@@ -762,3 +762,37 @@ permanent test.
 
 ---
 
+## 2026-11-10 — Arm D: Synthetic augmentation (qualified success, seed 42)
+
+**Status:** Complete at seed 42. Multi-seed confirmation pending.
+
+**Hypothesis:** 276 manually curated CycleGAN synthetic nighttime residential images, added to the Arm A recipe, will improve nighttime residential recall beyond both the real-only baseline (Arm A) and photometric augmentation control (Arm C).
+
+**Setup:**
+- Arms A (baseline), C (photometric aug), D (synthetic aug), seed 42, 5 epochs.
+- Arm D uses `outputs/method_2_synthetic/curated_manifest.json` (276 images, 6 manually rejected).
+- Recipe identical across arms (IMAGENET1K_V2, class weights, best-epoch selection).
+
+**Results:**
+
+| Metric | Arm A | Arm C | Arm D |
+|---|---:|---:|---:|
+| Night residential recall | 0.3605 | 0.4150 | **0.5170** |
+| Night macro-F1 | 0.6475 | 0.6625 | 0.6757 |
+| Day macro-F1 | 0.7457 | 0.7440 | 0.7216 |
+| Test macro-F1 | 0.7183 | 0.7214 | 0.7088 |
+
+**Paired bootstrap (night set, n=147):**
+- D − A residential recall: Δ=+0.158, 95% CI [+0.085, +0.229] — excludes zero
+- D − C residential recall: Δ=+0.104, 95% CI [+0.036, +0.168] — excludes zero
+- D − C night macro-F1: Δ=+0.014, 95% CI [-0.009, +0.038] — includes zero
+
+**Guardrail:** Day macro-F1 drop D vs C = 0.0224. Exceeds pre-registered 0.0200 threshold. Violated.
+
+**Diagnostic (daytime confusion matrix):** Arm D shifts toward residential predictions. Day city recall drops 81.3% → 74.5%; day residential precision drops 63.8% → 56.8%. The classifier trades daytime city-street precision for nighttime residential recall.
+
+**Verdict:** Qualified success. The generative approach works for the specific target class, at a documented cost. Single seed only.
+
+**Artifacts:** `docs/arm_d_findings.md`, `outputs/week5_arms/results_{A,C,D}_seed42.json`, `outputs/week5_arms/summary.json`, `outputs/week5_arms/arm_d_guardrail_diagnostic.txt`.
+
+**Next step:** run seed 123 for both C and D. If the D−C delta is stable across two seeds, this finding is complete. If it flips, seed 42 was noise.

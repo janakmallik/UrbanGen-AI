@@ -26,6 +26,8 @@ Decision rule (pre-registered):
 from __future__ import annotations
 
 import argparse
+import csv
+import hashlib
 import json
 import os
 import random
@@ -67,7 +69,9 @@ _VAL_LABEL = _DATA / "labels" / "bdd100k_labels_images_val.json"
 _IMAGES = _DATA / "images"
 _VAL_CLEAN = _URBANMIND / "data" / "splits" / "resnet_val_clean.json"
 _TEST_CLEAN = _URBANMIND / "data" / "splits" / "resnet_test_clean.json"
-_SYNTHETIC = _REPO_ROOT / "outputs" / "method_4_wan" / "frames_clip_filtered"
+_SYNTHETIC = _REPO_ROOT / "outputs" / "method_2_synthetic"
+_CURATED_MANIFEST = _SYNTHETIC / "curated_manifest.json"
+_FILTER_LOG = _SYNTHETIC / "filter_log.csv"
 _OUT_DIR = _REPO_ROOT / "outputs" / "week5_arms"
 
 # Recipe (identical across arms)
@@ -143,6 +147,83 @@ def index_images() -> dict[str, Path]:
 
 def load_records(path: Path) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_curated_synthetic() -> list[Path]:
+    """Load exactly the manually approved synthetic images."""
+
+    manifest = json.loads(_CURATED_MANIFEST.read_text(encoding="utf-8"))
+
+    if manifest["source_filter_log_sha256"] != hashlib.sha256(_FILTER_LOG.read_bytes()).hexdigest():
+        raise ValueError("Filter log SHA-256 mismatch.")
+
+    with _FILTER_LOG.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    accepted = sorted(
+        (r for r in rows if r["kept"] == "1"),
+        key=lambda r: r["output"],
+    )
+
+    if len(accepted) != manifest["total_accepted_by_filter"]:
+        raise ValueError("Accepted image count mismatch.")
+
+    labels = manifest["final_keep_labels"]
+
+    expected_rejected = [6, 7, 36, 72, 84, 149]
+    expected_keep = [i for i in range(1, 283) if i not in set(expected_rejected)]
+
+    if manifest["indexing_scheme"] != ("contact_sheet_label (1-282, sorted by output filename)"):
+        raise ValueError("Unexpected contact-sheet indexing scheme.")
+
+    if manifest["rejected_labels"] != expected_rejected:
+        raise ValueError("Rejected labels do not match the audited decisions.")
+
+    if labels != expected_keep:
+        raise ValueError("Curated labels do not match the exact approved 276-image selection.")
+
+    if len(labels) != manifest["final_count"] or len(set(labels)) != len(labels):
+        raise ValueError("Invalid curated manifest labels.")
+
+    if manifest["uncertain_labels"]:
+        raise ValueError("Unresolved uncertain images remain.")
+
+    if manifest["final_count"] != 276:
+        raise ValueError("Unexpected curated dataset size.")
+
+    if len(accepted) != 282:
+        raise ValueError("Unexpected accepted dataset size.")
+
+    selected = []
+    for label in labels:
+        if not isinstance(label, int) or not 1 <= label <= len(accepted):
+            raise ValueError(f"Invalid contact-sheet label: {label}")
+
+        filename = accepted[label - 1]["output"]
+        path = _SYNTHETIC / filename
+
+        if path.suffix.lower() != ".jpg" or not path.is_file():
+            raise FileNotFoundError(path)
+
+        selected.append(path)
+
+    if len(set(selected)) != 276:
+        raise ValueError("Duplicate synthetic image paths.")
+
+    actual_files = set(_SYNTHETIC.glob("*.jpg"))
+    if actual_files != {_SYNTHETIC / row["output"] for row in accepted}:
+        raise ValueError("Disk files do not match accepted filter-log outputs.")
+
+    for path in selected:
+        with Image.open(path) as img:
+            img.verify()
+
+    print("  Curated manifest: VERIFIED")
+    print(f"  Synthetic images selected: {len(selected)}")
+    print(f"  Rejected: {len(manifest['rejected_labels'])}")
+    print("  Filter log SHA-256: VERIFIED")
+
+    return selected
 
 
 def select_split(
@@ -231,7 +312,9 @@ def build_train_loader(arm, full_train, synthetic, seed):
 def build_eval_loader(records):
     ds = ClassificationDataset(records, week5_eval_transform())
     return DataLoader(
-        ds, batch_size=64, shuffle=False,
+        ds,
+        batch_size=64,
+        shuffle=False,
         num_workers=0,  # eval loaders: no workers — avoids Windows paging OOM
         pin_memory=True,
     )
@@ -463,7 +546,13 @@ def _night_macro_f1(y_true, y_pred):
 
 
 def _night_res_recall(y_true, y_pred):
-    return recall_score(y_true, y_pred, pos_label=2, zero_division=0)
+    return recall_score(
+        y_true,
+        y_pred,
+        labels=[2],
+        average="macro",
+        zero_division=0,
+    )
 
 
 def summarize():
@@ -506,40 +595,44 @@ def summarize():
 
     seed_a = sorted(results["A"].keys())[0]
     labels = np.array(results["A"][seed_a]["night"]["labels"])
-    preds_a = np.array(results["A"][seed_a]["night"]["predictions"])
 
     # Sanity: all arms must use same night labels (same image set, same order)
     for arm in arms:
         for seed in results[arm]:
             arm_labels = np.array(results[arm][seed]["night"]["labels"])
             if not np.array_equal(arm_labels, labels):
-                print(
-                    f"⚠️  WARNING: {arm} seed {seed} night labels differ from A. "
-                    f"Bootstrap results will be invalid."
+                raise ValueError(
+                    f"{arm} seed {seed}: night labels differ from Arm A. Paired bootstrap cannot be performed."
                 )
 
     print(f"\n{'=' * 100}")
     print(f"Paired bootstrap (seed {seed_a}, night set, {N_BOOTSTRAP} resamples)")
     print(f"{'=' * 100}")
 
-    for arm in arms:
-        if arm == "A":
+    import itertools
+
+    for arm1, arm2 in itertools.combinations(arms, 2):
+        seed1 = sorted(results[arm1].keys())[0]
+        seed2 = sorted(results[arm2].keys())[0]
+        preds_1 = np.array(results[arm1][seed1]["night"]["predictions"])
+        preds_2 = np.array(results[arm2][seed2]["night"]["predictions"])
+
+        if len(preds_1) != len(labels) or len(preds_2) != len(labels):
+            print(f"  {arm1} vs {arm2}: prediction count mismatch, skipping")
             continue
-        seed = sorted(results[arm].keys())[0]
-        preds_b = np.array(results[arm][seed]["night"]["predictions"])
-        if len(preds_b) != len(labels):
-            print(f"  Arm {arm}: prediction count {len(preds_b)} != {len(labels)}, skipping")
-            continue
-        mf1 = paired_bootstrap(labels, preds_a, preds_b, _night_macro_f1)
-        rec = paired_bootstrap(labels, preds_a, preds_b, _night_res_recall)
+
+        mf1 = paired_bootstrap(labels, preds_1, preds_2, _night_macro_f1)
+        rec = paired_bootstrap(labels, preds_1, preds_2, _night_res_recall)
+
         flag_mf1 = "EXCLUDES ZERO" if (mf1["ci_low"] > 0 or mf1["ci_high"] < 0) else "includes zero"
         flag_rec = "EXCLUDES ZERO" if (rec["ci_low"] > 0 or rec["ci_high"] < 0) else "includes zero"
+
         print(
-            f"\n  {arm} − A (night macro-F1): Δ={mf1['mean']:+.4f}  "
+            f"\n  {arm2} − {arm1} (night macro-F1): Δ={mf1['mean']:+.4f}  "
             f"CI [{mf1['ci_low']:+.4f}, {mf1['ci_high']:+.4f}]  {flag_mf1}"
         )
         print(
-            f"  {arm} − A (night residential recall): Δ={rec['mean']:+.4f}  "
+            f"  {arm2} − {arm1} (night residential recall): Δ={rec['mean']:+.4f}  "
             f"CI [{rec['ci_low']:+.4f}, {rec['ci_high']:+.4f}]  {flag_rec}"
         )
 
@@ -564,16 +657,30 @@ def summarize():
             print(f"\n  → ARM C < {C_PROCEED}: photometric doesn't meaningfully help.")
             print("    ACTION: Stop. Document negative finding.")
 
-        day_drop = a_day - c_day
-        print(
-            f"\n  GUARDRAIL: day macro-F1 drop (A − C) = {day_drop:+.4f}  "
-            f"(threshold ≤ {DAY_GUARDRAIL})"
-        )
-        if day_drop > DAY_GUARDRAIL:
+        # Report guardrails for all arms against their relevant control
+        if "A" in results:
+            a_day = results["A"][seed_a]["day_macro_f1"]
+        if "C" in results:
+            c_day = results["C"][seed_c]["day_macro_f1"]
+        if "D" in results:
+            seed_d = sorted(results["D"].keys())[0]
+            d_day = results["D"][seed_d]["day_macro_f1"]
+
+            # D vs A (original baseline)
+            day_drop_da = a_day - d_day
             print(
-                f"    ⚠️  day macro-F1 dropped by {day_drop:.4f} — "
-                f"arm C may be trading day for night"
+                f"\n  GUARDRAIL: day macro-F1 drop (A − D) = {day_drop_da:+.4f}  (threshold ≤ {DAY_GUARDRAIL})"
             )
+            if day_drop_da > DAY_GUARDRAIL:
+                print(f"    ⚠️  VIOLATED: {day_drop_da:.4f} > {DAY_GUARDRAIL}")
+
+            # D vs C (real-data control - the fair comparison)
+            day_drop_dc = c_day - d_day
+            print(
+                f"  GUARDRAIL: day macro-F1 drop (C − D) = {day_drop_dc:+.4f}  (threshold ≤ {DAY_GUARDRAIL})"
+            )
+            if day_drop_dc > DAY_GUARDRAIL:
+                print(f"    ⚠️  VIOLATED: {day_drop_dc:.4f} > {DAY_GUARDRAIL}")
 
     (_OUT_DIR / "summary.json").write_text(
         json.dumps({a: {str(s): r for s, r in results[a].items()} for a in arms}, indent=2),
@@ -590,12 +697,20 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--summarize", action="store_true")
+    parser.add_argument("--validate-synthetic", action="store_true")
     args = parser.parse_args()
 
     _OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     if args.summarize:
         return summarize()
+
+    if args.validate_synthetic:
+        selected = load_curated_synthetic()
+        print(f"\nValidation passed: {len(selected)} approved images.")
+        print("No training started.")
+        return 0
+
     if not args.arm:
         parser.error("--arm required unless --summarize")
 
@@ -638,7 +753,7 @@ def main():
     assert test_n == EXPECTED_TEST_CLEAN, f"full test = {test_n}, expected {EXPECTED_TEST_CLEAN}"
     print(f"  night: {night_n}  day: {day_n}  full test: {test_n}")
 
-    synthetic = sorted(_SYNTHETIC.glob("*.png")) if _SYNTHETIC.exists() else []
+    synthetic = load_curated_synthetic() if args.arm == "D" else []
     print(f"  synthetic frames: {len(synthetic)}")
 
     result = train_arm(
