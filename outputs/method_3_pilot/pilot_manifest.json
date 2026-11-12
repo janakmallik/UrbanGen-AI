@@ -1,0 +1,443 @@
+{
+  "phase": 3,
+  "timestamp": "2026-11-12T09:41:09",
+  "git_sha": "070b6173d7ada055c6ee56b602295bfdf585fc84",
+  "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "environment": {
+    "torch": "2.6.0+cu124",
+    "diffusers": "0.42.1",
+    "cuda": "12.4"
+  },
+  "models": {
+    "base_model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "base_model_commit": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet": "lllyasviel/control_v11f1p_sd15_depth",
+    "controlnet_commit": "539f99181d33db39cf1af2e517cd8056785f0a87"
+  },
+  "config": {
+    "steps": 30,
+    "guidance": 6.0,
+    "seed": 42,
+    "resolution": [
+      512,
+      288
+    ],
+    "prompt": "nighttime residential street, dark sky, streetlights, headlights, dashcam view, original scene geometry preserved",
+    "negative_prompt": "daytime, sunny, hallucinated objects, distorted structure, blurry, cartoon",
+    "strengths": [
+      0.6,
+      0.75
+    ],
+    "scales": [
+      0.6,
+      0.8,
+      1.0
+    ]
+  },
+  "source_selection": {
+    "phase1_source_excluded": "90ea4f91-8c13f832.jpg",
+    "pilot_sources": [
+      "904749b8-82ef630d.jpg",
+      "4fac2574-7fff4373.jpg",
+      "7b84249e-7f854c15.jpg",
+      "8d08b2fb-ae8c3657.jpg",
+      "11513e3d-864faa0c.jpg"
+    ],
+    "seed": 999,
+    "rng_seed": 1000,
+    "procedure": "Phase 1 exclusion + independently seeded deterministic pilot selection (random.Random(1000).sample(5) over sorted eligible)"
+  },
+  "sources": [
+    {
+      "filename": "904749b8-82ef630d.jpg",
+      "sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "depth_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\depth\\904749b8-82ef630d_depth.png"
+    },
+    {
+      "filename": "4fac2574-7fff4373.jpg",
+      "sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "depth_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\depth\\4fac2574-7fff4373_depth.png"
+    },
+    {
+      "filename": "7b84249e-7f854c15.jpg",
+      "sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "depth_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\depth\\7b84249e-7f854c15_depth.png"
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657.jpg",
+      "sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "depth_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\depth\\8d08b2fb-ae8c3657_depth.png"
+    },
+    {
+      "filename": "11513e3d-864faa0c.jpg",
+      "sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "depth_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\depth\\11513e3d-864faa0c_depth.png"
+    }
+  ],
+  "outputs": [
+    {
+      "filename": "904749b8-82ef630d_s60_c60.png",
+      "source": "904749b8-82ef630d.jpg",
+      "source_sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "output_sha256": "01ca1d7b59f25d24c533035d6b66e4594adc2f64ae8c2044839962a72e663028",
+      "strength": 0.6,
+      "scale": 0.6,
+      "executed_steps": 18,
+      "runtime_seconds": 2.98,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "904749b8-82ef630d_s60_c80.png",
+      "source": "904749b8-82ef630d.jpg",
+      "source_sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "output_sha256": "bc90b6f005421d623ba25991ab7ffd8451c01ad6e046074247f46802c874036d",
+      "strength": 0.6,
+      "scale": 0.8,
+      "executed_steps": 18,
+      "runtime_seconds": 2.12,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "904749b8-82ef630d_s60_c100.png",
+      "source": "904749b8-82ef630d.jpg",
+      "source_sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "output_sha256": "c2428b0c687ff599d9b2e28538e5b0b469efd71c463b01593ee4fc7593203115",
+      "strength": 0.6,
+      "scale": 1.0,
+      "executed_steps": 18,
+      "runtime_seconds": 2.11,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "904749b8-82ef630d_s75_c60.png",
+      "source": "904749b8-82ef630d.jpg",
+      "source_sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "output_sha256": "afbcdd68b8ce31a1b542597a9927596b59f3d9c7558201606adaeaa78e1678eb",
+      "strength": 0.75,
+      "scale": 0.6,
+      "executed_steps": 22,
+      "runtime_seconds": 2.52,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "904749b8-82ef630d_s75_c80.png",
+      "source": "904749b8-82ef630d.jpg",
+      "source_sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "output_sha256": "057c2c29ac76a609ebb662028c5b59aec3a788db4b8a86628b4b95b2fe0cab5e",
+      "strength": 0.75,
+      "scale": 0.8,
+      "executed_steps": 22,
+      "runtime_seconds": 2.53,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "904749b8-82ef630d_s75_c100.png",
+      "source": "904749b8-82ef630d.jpg",
+      "source_sha256": "5f7ec4adae812df66d1a1c0560515d2edd4cc4216a572bc316b565269cc068f1",
+      "output_sha256": "7968502fdc241dd26bf528ec2228b440d2286eb89a8e45e9b7e271d217136e64",
+      "strength": 0.75,
+      "scale": 1.0,
+      "executed_steps": 22,
+      "runtime_seconds": 2.53,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "4fac2574-7fff4373_s60_c60.png",
+      "source": "4fac2574-7fff4373.jpg",
+      "source_sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "output_sha256": "f5b135c22237dbad019957909863f41a36b5c583898b6361fd7d0707d5b5869c",
+      "strength": 0.6,
+      "scale": 0.6,
+      "executed_steps": 18,
+      "runtime_seconds": 2.1,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "4fac2574-7fff4373_s60_c80.png",
+      "source": "4fac2574-7fff4373.jpg",
+      "source_sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "output_sha256": "d2edfb0a5913ae15144f00df39be05329de62c876fc33b16fcf3054f823d87e8",
+      "strength": 0.6,
+      "scale": 0.8,
+      "executed_steps": 18,
+      "runtime_seconds": 2.1,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "4fac2574-7fff4373_s60_c100.png",
+      "source": "4fac2574-7fff4373.jpg",
+      "source_sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "output_sha256": "aaf473d7840b1ffaec742374184fc8dc27c408eeaabc650b0e5162874781004a",
+      "strength": 0.6,
+      "scale": 1.0,
+      "executed_steps": 18,
+      "runtime_seconds": 2.1,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "4fac2574-7fff4373_s75_c60.png",
+      "source": "4fac2574-7fff4373.jpg",
+      "source_sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "output_sha256": "b5a0952c84df3f8bfdfa99636ea5f18526710902e8a3eee0e3435b311f8b5cf7",
+      "strength": 0.75,
+      "scale": 0.6,
+      "executed_steps": 22,
+      "runtime_seconds": 2.52,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "4fac2574-7fff4373_s75_c80.png",
+      "source": "4fac2574-7fff4373.jpg",
+      "source_sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "output_sha256": "fa6a8d9a2bd2957a4f7495d21884d0b3642aa0837841224ab280765959314aa7",
+      "strength": 0.75,
+      "scale": 0.8,
+      "executed_steps": 22,
+      "runtime_seconds": 2.53,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "4fac2574-7fff4373_s75_c100.png",
+      "source": "4fac2574-7fff4373.jpg",
+      "source_sha256": "3dd9f2fb614007c7fa5495d65ab924385b8c5930523a7d2a0f516f21cd1ca129",
+      "output_sha256": "c7670aae68d77241129f8bcb3995869b3e40c0cd9756d677bf6d07eb5bf0b147",
+      "strength": 0.75,
+      "scale": 1.0,
+      "executed_steps": 22,
+      "runtime_seconds": 2.53,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "7b84249e-7f854c15_s60_c60.png",
+      "source": "7b84249e-7f854c15.jpg",
+      "source_sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "output_sha256": "a3b6a15e4a491af1fa945a0c5c68a6551990b4cec14ae0507e1a303c5e6ad943",
+      "strength": 0.6,
+      "scale": 0.6,
+      "executed_steps": 18,
+      "runtime_seconds": 2.12,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "7b84249e-7f854c15_s60_c80.png",
+      "source": "7b84249e-7f854c15.jpg",
+      "source_sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "output_sha256": "4c8f14be332d5c1efda053774e9939f13d67b87d51e9337cf0b73a5b00b40156",
+      "strength": 0.6,
+      "scale": 0.8,
+      "executed_steps": 18,
+      "runtime_seconds": 2.11,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "7b84249e-7f854c15_s60_c100.png",
+      "source": "7b84249e-7f854c15.jpg",
+      "source_sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "output_sha256": "1e8b3bc20f2893183ef679c2db92064109fccda6402e32c92f7aa8cbcfca7a4f",
+      "strength": 0.6,
+      "scale": 1.0,
+      "executed_steps": 18,
+      "runtime_seconds": 2.11,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "7b84249e-7f854c15_s75_c60.png",
+      "source": "7b84249e-7f854c15.jpg",
+      "source_sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "output_sha256": "7cc8686574e6f8822ce44e02adb5eda6587b5472edaf3ed12c057482e091a7d7",
+      "strength": 0.75,
+      "scale": 0.6,
+      "executed_steps": 22,
+      "runtime_seconds": 2.89,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "7b84249e-7f854c15_s75_c80.png",
+      "source": "7b84249e-7f854c15.jpg",
+      "source_sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "output_sha256": "d6d7eb4590206cd3a46831bc943e4aa12c978aa78b8d7d126d61c210f6f71645",
+      "strength": 0.75,
+      "scale": 0.8,
+      "executed_steps": 22,
+      "runtime_seconds": 2.88,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "7b84249e-7f854c15_s75_c100.png",
+      "source": "7b84249e-7f854c15.jpg",
+      "source_sha256": "f0973d086310297ddb8bfd2ccb298ee2c83de42e87da93ad74c7ac1fd11d6af6",
+      "output_sha256": "09bb5b4b298f3707c0e7a2de8bd3eafc6d413c585b705037fce4dbd21d8fd7e0",
+      "strength": 0.75,
+      "scale": 1.0,
+      "executed_steps": 22,
+      "runtime_seconds": 2.88,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657_s60_c60.png",
+      "source": "8d08b2fb-ae8c3657.jpg",
+      "source_sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "output_sha256": "e069169b7b688e9160f9c80f245db5f05ed642ba3a933876f7da07a62f52d443",
+      "strength": 0.6,
+      "scale": 0.6,
+      "executed_steps": 18,
+      "runtime_seconds": 2.41,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657_s60_c80.png",
+      "source": "8d08b2fb-ae8c3657.jpg",
+      "source_sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "output_sha256": "e454b1c0495a92af7d50909309a974e4623161613218bef0321fcf9a52b88ffe",
+      "strength": 0.6,
+      "scale": 0.8,
+      "executed_steps": 18,
+      "runtime_seconds": 2.42,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657_s60_c100.png",
+      "source": "8d08b2fb-ae8c3657.jpg",
+      "source_sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "output_sha256": "9f5bc0b3d20db3911dee497eda6ca4e14388c52d2be5c41413103833f7339f0b",
+      "strength": 0.6,
+      "scale": 1.0,
+      "executed_steps": 18,
+      "runtime_seconds": 2.42,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657_s75_c60.png",
+      "source": "8d08b2fb-ae8c3657.jpg",
+      "source_sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "output_sha256": "3625217108c81b37cf1f887cfbcb4a49dd12271d8a92b253b9e7da0318337245",
+      "strength": 0.75,
+      "scale": 0.6,
+      "executed_steps": 22,
+      "runtime_seconds": 2.91,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657_s75_c80.png",
+      "source": "8d08b2fb-ae8c3657.jpg",
+      "source_sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "output_sha256": "cefa9f5aefd65917f70f50601a554111facb49d5a063fe5d2cf5d996c888d545",
+      "strength": 0.75,
+      "scale": 0.8,
+      "executed_steps": 22,
+      "runtime_seconds": 2.89,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "8d08b2fb-ae8c3657_s75_c100.png",
+      "source": "8d08b2fb-ae8c3657.jpg",
+      "source_sha256": "6d3c2db6d274e63961f056c3d05fc0fdc39974f9eaa55eb4015849669a095b37",
+      "output_sha256": "422520586ac3c1024b16b2b3d3009797bc1e5e60ed0ab62903f800262493db0a",
+      "strength": 0.75,
+      "scale": 1.0,
+      "executed_steps": 22,
+      "runtime_seconds": 2.9,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "11513e3d-864faa0c_s60_c60.png",
+      "source": "11513e3d-864faa0c.jpg",
+      "source_sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "output_sha256": "74a558558feab0c281c4d58d37dc2383dfdba108eedae95c506f06e7b5a7c8bb",
+      "strength": 0.6,
+      "scale": 0.6,
+      "executed_steps": 18,
+      "runtime_seconds": 2.41,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "11513e3d-864faa0c_s60_c80.png",
+      "source": "11513e3d-864faa0c.jpg",
+      "source_sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "output_sha256": "a8df59932f3351434fcdceae7180e86b56a689320fa2bbda644927db20a3bb7f",
+      "strength": 0.6,
+      "scale": 0.8,
+      "executed_steps": 18,
+      "runtime_seconds": 2.41,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "11513e3d-864faa0c_s60_c100.png",
+      "source": "11513e3d-864faa0c.jpg",
+      "source_sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "output_sha256": "b3c4d5ccb388d2533268203ef993513b23e77452368dea1e2f6857b946fe8c84",
+      "strength": 0.6,
+      "scale": 1.0,
+      "executed_steps": 18,
+      "runtime_seconds": 2.41,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "11513e3d-864faa0c_s75_c60.png",
+      "source": "11513e3d-864faa0c.jpg",
+      "source_sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "output_sha256": "b1adf2363a0226db1b06d3aec5c2e29de126ba1cbb5797ce41568ebe4418cd2a",
+      "strength": 0.75,
+      "scale": 0.6,
+      "executed_steps": 22,
+      "runtime_seconds": 2.9,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "11513e3d-864faa0c_s75_c80.png",
+      "source": "11513e3d-864faa0c.jpg",
+      "source_sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "output_sha256": "61a2cb830feec87cc778a137248f543354dabea57998fc8e8136e2b043c29ca2",
+      "strength": 0.75,
+      "scale": 0.8,
+      "executed_steps": 22,
+      "runtime_seconds": 2.89,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    },
+    {
+      "filename": "11513e3d-864faa0c_s75_c100.png",
+      "source": "11513e3d-864faa0c.jpg",
+      "source_sha256": "662ae2b1c19139ac2ae21e3253be4fd9ada2cc2aef03100135965b9bc538da5f",
+      "output_sha256": "795858aaf2052c57002d29251840812a7d6def87910214c940bf1ed8bbea64d3",
+      "strength": 0.75,
+      "scale": 1.0,
+      "executed_steps": 22,
+      "runtime_seconds": 2.91,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    }
+  ],
+  "status": "complete",
+  "completed_count": 30,
+  "total_count": 30,
+  "completed_at": "2026-11-12T09:42:27"
+}
