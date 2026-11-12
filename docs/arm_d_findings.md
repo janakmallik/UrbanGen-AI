@@ -28,6 +28,19 @@ The pre-registered guardrail allowed a maximum daytime macro-F1 drop of 0.02.
 - Arm D dropped to 0.7216, a loss of **0.0224 vs C**.
 - **Guardrail: VIOLATED.**
 
+## The Trade-off (Guardrail Violation)
+The pre-registered guardrail allowed a maximum daytime macro-F1 drop of 0.02 relative to Arm A. 
+
+| Comparison | Arm A Day F1 | Arm C Day F1 | Arm D Day F1 | Drop (D - A) | Drop (D - C) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Daytime Macro-F1 | 0.7457 | 0.7440 | 0.7216 | **-0.0241** | -0.0224 |
+
+**Verdict:** Relative to the true baseline (Arm A), the daytime drop is **0.0241**, exceeding the 0.02 guardrail.
+
+## Statistical Limitations
+- **Single Seed:** These results represent a single training seed (42). Multi-seed reproducibility remains unverified.
+- **Evaluation Uncertainty:** The paired bootstrap confidence intervals (95% CI excluding zero for nighttime gains) quantify uncertainty across evaluation images, not across training runs.
+
 ### Why did it drop? (Confusion Matrix Diagnostic)
 The synthetic data taught the model to be sensitive to residential features. This is highly beneficial at night, but creates false positives during the day.
 - **City Street Recall:** 81.3% → 74.5% (-6.8 pp). The model now mistakes daytime city streets for residential.
