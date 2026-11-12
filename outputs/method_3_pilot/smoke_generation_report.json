@@ -1,0 +1,78 @@
+{
+  "phase": 2,
+  "timestamp": "2026-11-12T08:34:12",
+  "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "total_vram_gb": 6.0,
+  "environment": {
+    "torch": "2.6.0+cu124",
+    "diffusers": "0.42.1",
+    "cuda": "12.4"
+  },
+  "models": {
+    "base_model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "base_model_commit": "451f4fe16113bff5a5d2269ed5ad43b0592e9a14",
+    "controlnet": "lllyasviel/control_v11f1p_sd15_depth",
+    "controlnet_commit": "539f99181d33db39cf1af2e517cd8056785f0a87"
+  },
+  "inputs": {
+    "source_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\smoke_test_source.png",
+    "source_sha256": "81b579632bf5f24d8d67d78b0060910472172a84568ee5b0355855e3ff92d407",
+    "source_original_dimensions": [
+      512,
+      288
+    ],
+    "source_resized_dimensions": [
+      512,
+      288
+    ],
+    "depth_path": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\smoke_test_depth.png",
+    "depth_sha256": "472f356358cc6708d1ea5aef67c97ebaf5236413c6a09eca6bbfa3d5e428ad34",
+    "depth_original_dimensions": [
+      512,
+      288
+    ],
+    "depth_resized_dimensions": [
+      512,
+      288
+    ]
+  },
+  "config": {
+    "strength": 0.75,
+    "controlnet_conditioning_scale": 1.0,
+    "num_inference_steps": 30,
+    "guidance_scale": 6.0,
+    "seed": 42,
+    "resolution": [
+      512,
+      288
+    ],
+    "prompt": "nighttime residential street, dark sky, streetlights, headlights, dashcam view, original scene geometry preserved",
+    "negative_prompt": "daytime, sunny, hallucinated objects, distorted structure, blurry, cartoon"
+  },
+  "attempt_chain": [
+    "cuda",
+    "attention_slicing",
+    "sequential_cpu_offload"
+  ],
+  "attempts": [
+    {
+      "mode": "cuda",
+      "status": "PASS",
+      "runtime_seconds": 24.54,
+      "peak_allocated_gb": 3.06,
+      "peak_reserved_gb": 3.24
+    }
+  ],
+  "generation_status": "PASS",
+  "resource_gate": "PASS",
+  "status": "PASS",
+  "execution_mode": "cuda",
+  "runtime_seconds": 24.54,
+  "peak_allocated_gb": 3.06,
+  "peak_reserved_gb": 3.24,
+  "safe_limit_gb": 5.7,
+  "artifacts": {
+    "generated": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\smoke_generation.png",
+    "comparison": "C:\\Users\\Janak Mallik\\UrbanGen-AI\\outputs\\method_3_pilot\\smoke_comparison.png"
+  }
+}
