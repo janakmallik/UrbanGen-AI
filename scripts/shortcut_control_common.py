@@ -91,15 +91,47 @@ def checkpoint_sha256() -> str:
     return hashlib.sha256(CKPT_PATH.read_bytes()).hexdigest()
 
 
-def compute_clip_night(clip_model, clip_proc, image: Image.Image, device: str) -> float:
-    # Frozen Method 2 prompts — do not modify.
-    # These are residential-specific. For D-bal city/highway images, the score
-    # measures "resemblance to nighttime residential" which still preserves
-    # the nighttime-vs-daytime comparison pattern.
+def compute_clip_night_residential(clip_model, clip_proc, image: Image.Image, device: str) -> float:
+    """Frozen Method 2 prompts (residential-specific). Used only for parity tests."""
     prompts = [
         "a photo of a daytime residential street",
         "a photo of a nighttime residential street",
     ]
+    inputs = clip_proc(text=prompts, images=image, return_tensors="pt", padding=True).to(device)
+    with torch.inference_mode():
+        out = clip_model(**inputs)
+    return float(out.logits_per_image.softmax(dim=1).squeeze(0)[1])
+
+
+# Class-appropriate prompts for D-bal candidate filtering
+_CLIP_PROMPTS_BY_CLASS = {
+    "residential": [
+        "a photo of a daytime residential street",
+        "a photo of a nighttime residential street",
+    ],
+    "city": [
+        "a photo of a daytime city street",
+        "a photo of a nighttime city street",
+    ],
+    "highway": [
+        "a photo of a daytime highway",
+        "a photo of a nighttime highway",
+    ],
+}
+
+
+def compute_clip_night_for_class(
+    clip_model, clip_proc, image: Image.Image, device: str, scene_class: str
+) -> float:
+    """Class-appropriate CLIP night score for D-bal filtering.
+
+    Uses class-appropriate prompts to avoid penalizing city/highway images
+    for not looking residential. Documented limitation: Arm D used Method 2's
+    residential prompts; D-bal uses class-appropriate prompts.
+    """
+    if scene_class not in _CLIP_PROMPTS_BY_CLASS:
+        raise ValueError(f"Unknown scene class: {scene_class}")
+    prompts = _CLIP_PROMPTS_BY_CLASS[scene_class]
     inputs = clip_proc(text=prompts, images=image, return_tensors="pt", padding=True).to(device)
     with torch.inference_mode():
         out = clip_model(**inputs)

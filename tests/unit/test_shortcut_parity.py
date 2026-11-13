@@ -68,7 +68,7 @@ def test_filter_parity_with_method_2_code(models):
     reproduced due to HuggingFace model drift (documented limitation)."""
     from PIL import Image
 
-    from shortcut_control_common import compute_clip_night, compute_luminance
+    from shortcut_control_common import compute_clip_night_residential, compute_luminance
 
     clip_mod, clip_proc, seg_mod, seg_proc, device = models
     samples = _load_accepted_samples(3)
@@ -88,7 +88,7 @@ def test_filter_parity_with_method_2_code(models):
             gen_pil = img.convert("RGB")
 
         # Our shared module
-        our_clip = compute_clip_night(clip_mod, clip_proc, gen_pil, device)
+        our_clip = compute_clip_night_residential(clip_mod, clip_proc, gen_pil, device)
         our_lum = compute_luminance(gen_pil)
 
         # Method 2's exact code, run today
