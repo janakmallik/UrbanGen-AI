@@ -81,6 +81,28 @@
 - [ ] Tag final release `v0.4.0-phase2-results`
 - [ ] Do not modify the protocol after seeing results
 
+## Known Reproducibility Limitations
+
+### HuggingFace model drift (CLIP and SegFormer)
+
+Both `openai/clip-vit-base-patch32` and `nvidia/segformer-b0-finetuned-ade-512-512` models on HuggingFace have changed since Method 2 originally ran:
+
+**CLIP drift observed:**
+- `synth_0001_760dbea1-134c1864.jpg`: historical log = 0.826, current model = 0.715 (Δ = 0.111)
+- `synth_0002_13ea469f-01a5df25.jpg`: historical log = 0.957, current model = 0.935 (Δ = 0.022)
+
+**SegFormer drift observed:**
+- `synth_0002_13ea469f-01a5df25.jpg`: historical log = 0.202, current model = 0.205 (Δ = 0.003)
+
+**Diagnostic proof:** Running Method 2's exact code (same prompts, same scoring formula, same image) against the current HuggingFace models produces values that differ from the historical filter_log by these amounts. This is model-side drift, not implementation differences.
+
+**Implication:** D-bal's filter thresholds are frozen at `CLIP_NIGHT_MIN=0.50`, `LUMINANCE_MAX=0.20`, `PAVED_SURFACE_TOLERANCE=0.10`, matching Method 2's thresholds. However, applying these thresholds to *current* model scores may produce a slightly different accept/reject distribution than Method 2 produced historically.
+
+**Documented mitigation:**
+- `tests/unit/test_shortcut_parity.py` verifies our shared module matches Method 2's *code today*, not historical values.
+- `tests/unit/test_shortcut_parity.py::test_historical_reproducibility_documented_limitation` explicitly skips with this note.
+- D-bal generation logs will be compared to Method 2's historical survival rate (56.4%) and any significant deviation will be documented in the D-bal manifest.
+
 ## Stopping Rules
 
 - If Arm D fails any pre-registered criterion, report as documented negative result
