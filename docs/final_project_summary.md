@@ -1,25 +1,49 @@
 # UrbanGen-AI: Final Project Summary
 
-**Status:** Closed as a single-seed research pilot.
+**Status:** Closed as a single-seed research pilot (v1.0.0-final).
+**Core contribution:** A controlled empirical study of synthetic data augmentation for nighttime urban scene classification.
 
-## What the project accomplished
-1. **Tested 4 generative methods** for urban scene synthesis (cVAE, SD Img2Img, CycleGAN, SD ControlNet).
-2. **Only CycleGAN succeeded** in generating structurally valid nighttime residential images.
-3. **Proved synthetic augmentation works** for a specific weakness: nighttime residential recall improved from **0.36 to 0.52** (276 images) and **0.58** (138 images).
-4. **Documented the trade-off:** All synthetic arms violated the 0.02 daytime macro-F1 guardrail.
-5. **Built a reusable diagnostic toolkit** (parity tests, golden tests, pipeline verifiers) that can be applied to any future generative pipeline.
+## 1. The Problem
+ResNet-50 (UrbanMind-AI Week 5) achieves 78% overall accuracy on BDD100K, but only **18.4% recall on nighttime residential scenes**. We asked: can generative models produce synthetic nighttime residential images that fix this weakness?
 
-## The core finding
-> CycleGAN synthetic data is useful for nighttime residential recognition, but it costs daytime accuracy. The effect is dose-responsive (138 images gave the best pilot result), and mixing in non-residential synthetic data (D-bal) did not help.
+## 2. What We Tested
+We evaluated four generative approaches:
+1. **cVAE from scratch** — Failed (blurry representation mismatch).
+2. **SD 1.5 Img2Img** — Failed (hallucinated buildings, deleted signs).
+3. **Depth ControlNet** — Failed (cartoon artifacts at 512×288).
+4. **CycleGAN from scratch** — **Succeeded** (preserved scene geometry).
 
-## Limitations
-- **Single seed:** No multi-seed variance was measured.
-- **Confounded shortcut control:** D-bal used uncurated city/highway images.
-- **No external validation:** Results are specific to BDD100K and ResNet-50.
+## 3. The Downstream Result
+We added 276 curated CycleGAN synthetic nighttime images to the training set (Arm D). 
+- **Nighttime residential recall:** 0.3605 → **0.5170** (image-level CI [0.085, 0.229]).
+- **The Trade-off:** Daytime macro-F1 dropped by **-0.024**, violating the pre-registered 0.02 guardrail.
 
-## Where to look
-- **Full details:** `docs/phase2_pilot_findings.md`
-- **Main results:** `outputs/week5_arms/summary.json`
-- **Generative method analysis:** `docs/findings.md`
-- **Lessons learned:** `docs/lessons.md`
+We then ran a dose-matched pilot (Arm D-138) with only 138 images:
+- **Nighttime residential recall:** 0.3605 → **0.5782** (best pilot result).
+- **Daytime macro-F1 drop:** -0.031 (VIOLATED).
+
+We also tested mixed-class synthetic data (Arm D-bal):
+- **Nighttime residential recall:** 0.4966.
+- **Confound:** City/highway images were not manually curated. The result is inconclusive.
+
+## 4. The Diagnostics Toolkit
+The project produced reusable artifacts:
+- **Parity tests** (`test_shortcut_parity.py`) — verify a new filter matches the original.
+- **Golden tests** (`test_week5_pipeline.py`) — 6 tests proving Week 5 checkpoint + pipeline reproducibility.
+- **Shared preprocessing** (`preprocessing.py`) — consumed by UrbanMind-AI Week 12.
+
+## 5. Honest Limitations
+- **Single seed only.** No multi-seed variance was measured. All claims are seed-42 pilot observations.
+- **D-bal is confounded.** The city/highway synthetic images were not manually curated.
+- **No Arm B.** We did not compare against real-image oversampling.
+- **No external validation.** Results are specific to BDD100K and ResNet-50.
+
+## 6. Verdict
+CycleGAN synthetic augmentation is a promising, statistically supported single-seed intervention for nighttime residential recognition, at a documented daytime cost. It is a **pilot**, not a definitive claim. Full multi-seed validation is documented as future work.
+
+## 7. Where to Look
+- **Every claim with evidence:** `docs/claims.md`
+- **Full Phase 2 pilot details:** `docs/phase2_pilot_findings.md`
 - **Reproduction commands:** `docs/reproducibility.md`
+- **Journal of experiments:** `docs/experiments.md`
+- **Negative result logs:** `docs/method_1_day_to_night_log.md`, `docs/method_2_cyclegan_log.md`, `docs/method_3_controlnet_log.md`

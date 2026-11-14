@@ -36,6 +36,10 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Arm D beats Arm C on night residential recall | Same | Paired bootstrap Δ=+0.1036, 95% CI [+0.0357, +0.1678], excludes zero |
 | D-138 (138 res) beats Arm A on night residential recall | `outputs/week5_arms/results_D-138_seed42.json` | Seed 42, recall 0.5782 vs 0.3605, paired bootstrap CI excludes zero |
 | D-bal (mixed classes) beats Arm A on night residential recall | `outputs/week5_arms/results_D-bal_seed42.json` | Seed 42, recall 0.4966 vs 0.3605, paired bootstrap CI excludes zero |
+| D-138 (138 res) night res recall = 0.5782 | `outputs/week5_arms/results_D-138_seed42.json` | Single seed. Paired bootstrap vs A CI excludes zero. |
+| D-138 ⊂ D (138 exact subset of 276) | `scripts/_check_manifests.py` output | Verified: 138 images exactly match a subset of Arm D's 276. |
+| D-bal residential subset == D-138 subset | `scripts/_check_manifests.py` output | Verified: D-bal's residential slice equals D-138's. |
+| D-bal has 69 city + 69 highway | `outputs/method_2_synthetic/shortcut_control/d_bal_manifest.json` | Verified. |
 
 ---
 
@@ -65,6 +69,10 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | D-138 outperforms D (276 res) | `outputs/week5_arms/summary.json` | Single seed. Point estimate is higher (+0.061), but CI includes zero and precision drops. |
 | D-bal underperforms D-138 | `outputs/week5_arms/summary.json` | Single seed. Point estimate is lower (-0.079), but CI touches zero. Confounded by uncurated city/highway images. |
 | The "shortcut" hypothesis is resolved | `docs/phase2_pilot_findings.md` | Not resolved. D-bal drop could be from class mixing OR uncurated image quality. |
+| D-138 outperforms D (276 res) on night res recall | `outputs/week5_arms/summary.json` | Single seed. Point estimate +0.061; CI includes zero; precision drops. |
+| D-bal underperforms D-138 on night res recall | `outputs/week5_arms/summary.json` | Single seed. Point estimate −0.079; CI touches zero. Confounded by uncurated city/highway images. |
+| The "shortcut" hypothesis is resolved | `docs/phase2_pilot_findings.md` | **NOT resolved.** D-bal drop could be class mixing OR uncurated quality. |
+| All synthetic arms violate the daytime guardrail | `outputs/week5_arms/results_{D,D-138,D-bal}_seed42.json` | D: −0.024, D-138: −0.031, D-bal: −0.024. Threshold 0.02. |
 
 ## Arm D findings (qualified success — seed 42 only)
 
@@ -90,6 +98,8 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Residential "class is fuzzy" | Pre-visual inspection | **Retracted after visual inspection.** Both grids show residential-looking scenes. The label is consistent. What's real is that OOF recall (0.70) is inflated by precision (0.37) |
 | Video leakage in OOF CV inflated recall | Audit assumption | **Retracted.** BDD100K 100K set has one frame per video (10th second), so adjacent-frame leakage doesn't apply. Weaker issue: some rides share videos, so near-duplicates across folds are possible but rare |
 | The 282 accepted images are clean synthetic data | Showed to contain structural failures (near-black, smeared) when inspecting 20-image sample | **Retracted.** Manual curation required. Sample was 20 images; actual failure rate to be determined by full 282-image inspection |
+| D-138 "beats" D | Internal interim summary | **Retracted.** Image-level CI includes zero. Point estimate only. |
+| The shortcut hypothesis is confirmed | Internal interim summary | **Retracted.** Confounded by uncurated city/highway images. Unresolved. |
 
 ---
 
@@ -102,6 +112,10 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Residential class definition | Redefinition study | Merge residential + city → "urban street" vs highway, or split residential subclasses |
 | Arm D downstream improvement | Arm D run | Pre-registered protocol, curated synthetic set, paired bootstrap vs Arm A (0.3605 recall, 0.6475 macro-F1) |
 | Week 12 serving impact | Not applicable | UrbanMind-AI scope, not UrbanGen-AI |
+| Multi-seed variance (any Phase 2 arm) | Seeds 123, 456 not run | Additional GPU runs |
+| D-bal shortcut isolation | Confounded by uncurated data | Manual curation of 397 images |
+| Arm B (real oversampling) | Not run | 1 GPU run |
+| External dataset validation (ACDC) | Not attempted | Second dataset integration |
 
 ---
 
