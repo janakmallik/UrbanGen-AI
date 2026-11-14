@@ -25,15 +25,22 @@ The project tested three generative approaches:
 
 ## Project status
 
-**v0.2.0-g2-arm-d-seed42** — Arm D finding landed. Qualified success at single seed.
+**v1.0.0-final** — Research pilot. Closed as a single-seed study.
 
 The project's central research question — whether synthetic urban data improves downstream recognition — has a partial answer: **yes, for nighttime residential recall specifically, at a documented cost to daytime precision.**
 
-- Method 2 (CycleGAN) synthetic nighttime data: **statistically supported improvement** at night residential recall over both real-data-only and photometric augmentation controls, when measured at seed 42.
-- Trade-off: **daytime macro-F1 drops by 0.0224**, exceeding the pre-registered 0.02 guardrail.
-- Single seed only. Multi-seed confirmation has not been run.
+**Final results (seed 42):**
+- **Arm A (real only):** 0.3605 night residential recall
+- **Arm C (photometric aug):** 0.4150
+- **Arm D (276 residential synthetic):** 0.5170
+- **Arm D-138 (138 residential synthetic):** **0.5782** ← best pilot result
+- **Arm D-bal (138 res + 138 mixed):** 0.4966
 
-Full details: `docs/arm_d_findings.md`, `docs/claims.md`.
+**The trade-off:** All synthetic arms violated the pre-registered daytime guardrail (>0.02 drop).
+
+**Limitations:** Single seed only. Multi-seed confirmation, manual curation of D-bal, and independent dataset validation are documented as future work.
+
+Full details: `docs/phase2_pilot_findings.md`, `docs/arm_d_findings.md`, `docs/claims.md`.
 
 ## Arm D result (qualified success, seed 42)
 
@@ -64,6 +71,8 @@ Adding 276 manually curated CycleGAN synthetic nighttime images to ResNet-50 tra
 | **G1-final** — Close + Showcase | `v0.1.2-g1-final` | Diagnostic toolkit, corrected robustness report, I2V showcase |
 | **G2** — Generative methods | `v0.1.3-g1-final` | Method 1 failed, Method 2 succeeded, Method 3 pending |
 | **G2-ArmD** — Synthetic augmentation | `v0.2.0-g2-arm-d-seed42` | Qualified success at seed 42: night residential recall 0.36 → 0.52, day macro-F1 guardrail violated |
+| **G2-Phase2** — Dose + class mix pilot | `v0.5.0-phase2-seed42-pilot` | D-138 (138 res) hits 0.578 night res recall; D-bal inconclusive; shortcut hypothesis unresolved |
+| **v1.0.0-final** — Project close | `v1.0.0-final` | Research pilot closed. All claims committed and reproducible. |
 
 ## The cVAE finding (G1c — negative)
 
@@ -196,6 +205,8 @@ UrbanMind-AI's Week 5 ResNet-50 is a **city-street detector**: 88% recall on cit
 - **Not a claim that the cVAE approach works.** It failed.
 - **Not a claim that Stable Diffusion cannot do day-to-night.** Method 1 tested SD 1.5 Img2Img specifically; ControlNet is Method 3 (not attempted).
 - **Not a claim that CycleGAN solves the residential weakness without cost.** Arm D showed +0.158 night residential recall at seed 42, but with a documented daytime macro-F1 drop of 0.0224. The trade-off is real.
+- **Not a claim that the shortcut hypothesis is resolved.** The D-bal pilot was inconclusive because the city/highway synthetic images were not manually curated.
+- **Not a production system.** This is a single-seed research pilot, not a validated production classifier. Multi-seed variance and independent dataset validation are deferred.
 - **Not deployed.** No API, no Docker, no serving. UrbanMind-AI's Week 12 is the natural home.
 
 ## Setup
@@ -288,10 +299,17 @@ Six diagnostic episodes. Full version in `docs/lessons.md`.
 
 ## What future work should test
 
-1. **Arm D multi-seed confirmation** — rerun Arms C and D at seed 123 to verify the seed-42 finding holds across training seeds.
-2. **Daytime trade-off mitigation** — stratified loss weighting, or a light fine-tune after synthetic training, to recover the 0.02 day macro-F1 cost.
-3. **Method 3 (Depth ControlNet)** — structural conditioning may beat CycleGAN on quality and reduce the daytime artifact.
-4. **DDPM at higher resolution** — beyond cVAE's 128×128 limit.
+**Deferred experiments** (documented in `docs/phase2_pilot_findings.md`):
+
+1. **Multi-seed confirmation** — rerun Arms A, C, D, D-138, D-bal at seeds 123 and 456 to measure training-seed variance.
+2. **Manual curation of D-bal** — manually review the 397 city/highway accepted images to resolve the shortcut hypothesis without quality confounds.
+3. **Arm B (real oversampling)** — compare synthetic data against simply duplicating real nighttime images.
+4. **Daytime trade-off mitigation** — sampling ratios or fine-tuning to recover the 0.02 day macro-F1 cost.
+5. **Independent validation** — test on ACDC or another nighttime dataset.
+
+**Not recommended:**
+- Additional generative architectures (CycleGAN is already the winner).
+- Higher-resolution cVAE (representation mismatch is architectural, not resolution-limited).
 
 ## License
 
