@@ -128,6 +128,18 @@ Plus four supporting diagnostics:
 
 **Any future generative pipeline** can be tested with these in ~30 min before committing to a fine-tune.
 
+## Phase 2 Pilot (Single Seed)
+
+After the initial Arm D result (0.517 recall), we ran a dose-matched pilot:
+- **D-138 (138 residential synthetic):** Night res recall = **0.5782** (best pilot result)
+- **D-bal (138 residential + 69 city + 69 highway):** Night res recall = 0.4966
+
+**The shortcut hypothesis remains unresolved.** D-bal's drop could be from mixing classes or from the fact that the city/highway images were not manually curated.
+
+**All synthetic arms violate the daytime guardrail** (drop > 0.02).
+
+Full details: `docs/phase2_pilot_findings.md`
+
 ## What the project is NOT
 
 - **Not a claim that all generative approaches are useless.** The cVAE failed and SD 1.5 Img2Img failed, but **CycleGAN succeeded** (structural preservation). Depth ControlNet is untested.

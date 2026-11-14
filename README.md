@@ -195,6 +195,7 @@ Plus supporting diagnostics:
 - **`docs/dataset_cards/bdd100k_synthetic_cyclegan.md`** — Synthetic night dataset card
 - **`src/urbangen/data/preprocessing.py`** — Shared Week 5 pipeline (importable by UrbanMind-AI Week 12)
 - **`docs/assets/method_results/`** — comparison images from all methods
+- **`docs/final_project_summary.md`** — top-level honest summary of the entire project
 
 ## The cross-project finding
 

@@ -131,3 +131,17 @@ The common failure mode is **plausible-looking numbers (or code) that nobody ver
 **The lesson:** For generative augmentation, no automated filter is reliable. Every filter must be validated by inspecting the images it accepts and rejects. A filter that flags 40% of images as "bad" is not a good filter — it's an untested heuristic that will destroy training data.
 
 **The fix:** Manual curation. Show source + generated pairs, let human eyes decide good/bad. This is ~30 min for 500 images using a contact sheet.
+
+## Episode 8 — The confounded ablation
+
+**What happened:** After Arm D (276 residential synthetic) improved nighttime recall, we built D-bal (138 residential + 138 mixed) to test whether the model was "learning a shortcut." D-bal underperformed D-138 (138 residential only). We initially concluded the shortcut hypothesis was confirmed.
+
+**What was wrong:** The D-bal mix had two changes at once:
+1. Different class distribution (residential vs residential + city/highway)
+2. Different image quality (residential went through manual curation; city/highway did not)
+
+The performance drop could be from either factor. We cannot isolate the "shortcut" explanation from the "garbage images" explanation.
+
+**The lesson:** When comparing two arms, change exactly one variable. If you're testing "does class composition matter?", keep the total dose AND the image quality identical. If you're testing "does curation matter?", change only the curation protocol, not the class distribution.
+
+**Files:** `docs/phase2_pilot_findings.md` §5 (limitations), `docs/claims.md` (retracted shortcut-confirmed claim)
