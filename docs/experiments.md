@@ -817,4 +817,5 @@ permanent test.
 
 **Artifacts:** `docs/phase2_pilot_findings.md`, `outputs/week5_arms/results_D-138_seed42.json`, `outputs/week5_arms/results_D-bal_seed42.json`.
 
+**Closure:** Project tagged `v1.0.0-final` (commit `5a737b3`). Repository frozen. Paper writing deferred to a separate track.
 ---
