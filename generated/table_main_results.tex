@@ -1,0 +1,16 @@
+\begin{table}[H]
+\centering
+\caption{Classifier arms, seed~42. Night set $n{=}1{,}931$ (residential $n{=}147$); day set $n{=}2{,}447$; overall test $n{=}4{,}745$. Best per column in bold.}
+\label{tab:main-results}
+\begin{tabular}{lcccc}
+\toprule
+Arm & Night Res.\ Recall & Night Macro-F1 & Day Macro-F1 & Test Macro-F1 \\
+\midrule
+A (real only) & 0.3605 & 0.6475 & \textbf{0.7457} & 0.7183 \\
+C (photometric) & 0.4150 & 0.6625 & 0.7440 & \textbf{0.7214} \\
+D (276 synth.) & 0.5170 & 0.6757 & 0.7216 & 0.7088 \\
+D-138 (138) & \textbf{0.5782} & \textbf{0.6788} & 0.7148 & 0.7058 \\
+D-bal (276 mix) & 0.4966 & 0.6635 & 0.7221 & 0.7074 \\
+\bottomrule
+\end{tabular}
+\end{table}
