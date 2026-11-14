@@ -10,21 +10,21 @@ ResNet-50 (UrbanMind-AI Week 5) achieves 78% overall accuracy on BDD100K, but on
 We evaluated four generative approaches:
 1. **cVAE from scratch** — Failed (blurry representation mismatch).
 2. **SD 1.5 Img2Img** — Failed (hallucinated buildings, deleted signs).
-3. **Depth ControlNet** — Failed (cartoon artifacts at 512×288).
+3. **Depth ControlNet** — Failed (cartoon artifacts at 512×288, 0/30 passed visual gate).
 4. **CycleGAN from scratch** — **Succeeded** (preserved scene geometry).
 
 ## 3. The Downstream Result
 We added 276 curated CycleGAN synthetic nighttime images to the training set (Arm D). 
-- **Nighttime residential recall:** 0.3605 → **0.5170** (image-level CI [0.085, 0.229]).
-- **The Trade-off:** Daytime macro-F1 dropped by **-0.024**, violating the pre-registered 0.02 guardrail.
+- **Nighttime residential recall:** 0.3605 → **0.5170** (paired bootstrap 95% CI excludes zero).
+- **The Trade-off:** Daytime macro-F1 dropped by **-0.0241**, violating the pre-registered 0.02 guardrail.
 
 We then ran a dose-matched pilot (Arm D-138) with only 138 images:
 - **Nighttime residential recall:** 0.3605 → **0.5782** (best pilot result).
-- **Daytime macro-F1 drop:** -0.031 (VIOLATED).
+- **Daytime macro-F1 drop:** -0.0309 (VIOLATED).
 
 We also tested mixed-class synthetic data (Arm D-bal):
 - **Nighttime residential recall:** 0.4966.
-- **Confound:** City/highway images were not manually curated. The result is inconclusive.
+- **Confound:** City/highway images were not manually curated. The result is inconclusive regarding the "shortcut" hypothesis.
 
 ## 4. The Diagnostics Toolkit
 The project produced reusable artifacts:
@@ -37,6 +37,7 @@ The project produced reusable artifacts:
 - **D-bal is confounded.** The city/highway synthetic images were not manually curated.
 - **No Arm B.** We did not compare against real-image oversampling.
 - **No external validation.** Results are specific to BDD100K and ResNet-50.
+- **Checkpoints were deleted post-training.** Daytime statistical audits were not run.
 
 ## 6. Verdict
 CycleGAN synthetic augmentation is a promising, statistically supported single-seed intervention for nighttime residential recognition, at a documented daytime cost. It is a **pilot**, not a definitive claim. Full multi-seed validation is documented as future work.
