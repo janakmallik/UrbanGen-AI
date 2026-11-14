@@ -34,6 +34,8 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Arm D night residential recall = 0.5170 | `outputs/week5_arms/results_D_seed42.json` | Seed 42, best epoch 3, val macro-F1 0.7007 |
 | Arm D beats Arm A on night residential recall | `outputs/week5_arms/summary.json` | Paired bootstrap Δ=+0.1577, 95% CI [+0.0848, +0.2292], excludes zero |
 | Arm D beats Arm C on night residential recall | Same | Paired bootstrap Δ=+0.1036, 95% CI [+0.0357, +0.1678], excludes zero |
+| D-138 (138 res) beats Arm A on night residential recall | `outputs/week5_arms/results_D-138_seed42.json` | Seed 42, recall 0.5782 vs 0.3605, paired bootstrap CI excludes zero |
+| D-bal (mixed classes) beats Arm A on night residential recall | `outputs/week5_arms/results_D-bal_seed42.json` | Seed 42, recall 0.4966 vs 0.3605, paired bootstrap CI excludes zero |
 
 ---
 
@@ -60,6 +62,9 @@ Every quantitative claim in UrbanGen-AI, with evidence file and status.
 | Arm D does not degrade daytime macro-F1 by more than 0.02 | `outputs/week5_arms/arm_d_guardrail_diagnostic.txt` | **Violated.** Day macro-F1 drop 0.0224 vs Arm C, exceeds pre-registered 0.0200 threshold |
 | Arm D trades city-street precision for residential recall | `outputs/week5_arms/arm_d_guardrail_diagnostic.txt` | Day city recall drops 6.8 pp (81.3% → 74.5%); day residential precision drops 7.0 pp (63.8% → 56.8%) |
 | Synthetic augmentation solves nighttime residential weakness | `docs/arm_d_findings.md` | Seed 42 only. Multi-seed confirmation not run. Trade-off documented |
+| D-138 outperforms D (276 res) | `outputs/week5_arms/summary.json` | Single seed. Point estimate is higher (+0.061), but CI includes zero and precision drops. |
+| D-bal underperforms D-138 | `outputs/week5_arms/summary.json` | Single seed. Point estimate is lower (-0.079), but CI touches zero. Confounded by uncurated city/highway images. |
+| The "shortcut" hypothesis is resolved | `docs/phase2_pilot_findings.md` | Not resolved. D-bal drop could be from class mixing OR uncurated image quality. |
 
 ## Arm D findings (qualified success — seed 42 only)
 

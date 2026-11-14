@@ -796,3 +796,25 @@ permanent test.
 **Artifacts:** `docs/arm_d_findings.md`, `outputs/week5_arms/results_{A,C,D}_seed42.json`, `outputs/week5_arms/summary.json`, `outputs/week5_arms/arm_d_guardrail_diagnostic.txt`.
 
 **Next step:** run seed 123 for both C and D. If the D−C delta is stable across two seeds, this finding is complete. If it flips, seed 42 was noise.
+
+---
+
+## 2026-11-14 — Phase 2 Pilot: Dose and Class Mix (Closed)
+
+**Status:** Complete at seed 42. Project closed.
+
+**Hypothesis:** Does reducing synthetic dose (276 → 138) preserve nighttime recall? Does adding non-residential synthetic images (D-bal) hurt or help?
+
+**Results (Seed 42):**
+- **Arm D-138 (138 res):** Night res recall **0.5782** (best pilot result). Day macro-F1 drop: -0.031 (VIOLATED).
+- **Arm D-bal (138 res + 69 city + 69 hwy):** Night res recall **0.4966**. Day macro-F1 drop: -0.024 (VIOLATED).
+
+**Interpretation:**
+- 138 residential images outperformed 276 residential images on recall (but CI includes zero).
+- Mixed-class augmentation underperformed residential-only augmentation (but confounded by uncurated image quality).
+- The shortcut hypothesis remains unresolved.
+- Single seed only. Multi-seed replication is deferred.
+
+**Artifacts:** `docs/phase2_pilot_findings.md`, `outputs/week5_arms/results_D-138_seed42.json`, `outputs/week5_arms/results_D-bal_seed42.json`.
+
+---

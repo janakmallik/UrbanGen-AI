@@ -63,3 +63,32 @@ From the UrbanGen-AI project root:
 ## 7. Reproducibility Limitations
 
 A fixed seed alone does not guarantee bit-for-bit identical video output. Results can vary with GPU hardware, PyTorch/CUDA versions, WanGP version, and model quantization.
+
+---
+
+## Phase 2 Reproduction (Seed-42 Pilot)
+
+To reproduce the D-138 and D-bal pilot results:
+
+1. **Build the dose-matched manifests:**
+   ```powershell
+   uv run python scripts/build_automated_d_bal.py
+   ```
+   *This creates `d_138_manifest.json` (138 residential) and `d_bal_manifest.json` (138 residential + 69 city + 69 highway).*
+
+2. **Train D-138 (Matched Control):**
+   ```powershell
+   uv run python scripts/train_week5_augmented_arms_v3.py --arm D-138 --seed 42
+   ```
+
+3. **Train D-bal (Shortcut Control):**
+   ```powershell
+   uv run python scripts/train_week5_augmented_arms_v3.py --arm D-bal --seed 42
+   ```
+
+4. **Summarize results:**
+   ```powershell
+   uv run python scripts/train_week5_augmented_arms_v3.py --summarize
+   ```
+
+*Expected results are committed in `outputs/week5_arms/results_D-138_seed42.json`, `results_D-bal_seed42.json`, and documented in `docs/phase2_pilot_findings.md`.*
