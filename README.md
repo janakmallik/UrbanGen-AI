@@ -42,6 +42,8 @@ The project's central research question — whether synthetic urban data improve
 
 Full details: `docs/phase2_pilot_findings.md`, `docs/arm_d_findings.md`, `docs/claims.md`.
 
+The protocol's primary metric was nighttime macro-F1, which showed a directional but not statistically significant improvement; residential recall improved as a secondary metric.
+
 ## Arm D result (qualified success, seed 42)
 
 Adding 276 manually curated CycleGAN synthetic nighttime images to ResNet-50 training improved nighttime residential recall from **0.3605 → 0.5170** (paired bootstrap Δ=+0.158, 95% CI [+0.085, +0.229], excludes zero), a +43% relative improvement over the Arm A baseline. The improvement over Arm C (photometric augmentation, 0.4150 → 0.5170) is also statistically supported at Δ=+0.104.
@@ -56,7 +58,7 @@ Adding 276 manually curated CycleGAN synthetic nighttime images to ResNet-50 tra
 |---|---|---|
 | **Method 1** | SD 1.5 Img2Img (day→night) | ❌ Failed (hallucinated buildings, deleted signs) — see `docs/method_1_day_to_night_log.md` |
 | **Method 2** | CycleGAN from scratch | ✅ **Successful** — see `docs/method_2_cyclegan_log.md` |
-| **Method 3** | Depth ControlNet | ⏸️ Deferred after Arm D-M2 success (calibration complete, generation not attempted) |
+| **Method 3** | Depth ControlNet | ⏸️ 30-image pilot failed visual gate (cartoon artifacts); full-scale generation deferred. |
 | **Method 4** | WanGP I2V video generation | ✅ Showcase pipeline documented |
 
 ## Milestones
@@ -320,11 +322,11 @@ MIT — see [LICENSE](LICENSE).
 
 ``````bibtex
 @software{urbangen_2026,
-  title   = {UrbanGen-AI: Diagnosing Whether From-Scratch Generative Models Produce Useful Synthetic Urban Data},
+  title   = {UrbanGen-AI: Evaluating Synthetic Day-to-Night Image Translation for Urban Scene Classification},
   author  = {Mallik, Janak},
   year    = {2026},
   url     = {https://github.com/janakmallik/UrbanGen-AI},
-  note    = {Release v0.2.0-g2-arm-d-seed42. Consumes BDD100K splits from UrbanMind-AI v0.10.0-week10-calibration}
+  note    = {Release v1.0.0-paper. Consumes BDD100K splits from UrbanMind-AI v0.10.0-week10-calibration}
 }
 ``````
 
