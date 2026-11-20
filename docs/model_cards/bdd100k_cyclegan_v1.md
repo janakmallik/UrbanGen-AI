@@ -6,8 +6,8 @@ A CycleGAN model trained from scratch to translate daytime urban scenes into nig
 
 ## Architecture
 - **Model:** Lightweight CycleGAN (ResNet-based generator, PatchGAN discriminator)
-- **Generator parameters:** ~500K
-- **Discriminator parameters:** ~2.7M
+- **Generator parameters:** ~1.4M
+- **Discriminator parameters:** ~94K
 - **Input resolution:** 512×288
 - **Channels:** RGB (3)
 - **Normalization:** InstanceNorm
